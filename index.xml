@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>客舟听雨</title>
+    <link>https://hj24.github.io/</link>
+    <description>Recent content on 客舟听雨</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Sat, 14 Nov 2020 19:23:04 +0800</lastBuildDate>
+    
+	<atom:link href="https://hj24.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Hugo使用指北</title>
+      <link>https://hj24.github.io/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/</link>
+      <pubDate>Sat, 14 Nov 2020 19:54:13 +0800</pubDate>
+      
+      <guid>https://hj24.github.io/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+从 hexo 迁移到了 hugo，从安装到部署，记录一下使用流程。</description>
+    </item>
+    
+    <item>
+      <title>Snippets</title>
+      <link>https://hj24.github.io/snippets/</link>
+      <pubDate>Sat, 14 Nov 2020 19:23:04 +0800</pubDate>
+      
+      <guid>https://hj24.github.io/snippets/</guid>
+      <description>东拼西凑，存一些常用的代码片，持续更新 MySQL 找出所有执行时间超过 5 分钟的线程，拼凑出 kill 语句，方便后面查杀 SELECT CONCAT(&amp;#39;kill &amp;#39;, id, &amp;#39;;&amp;#39;) FROM information_schema.processlist WHERE Command != &amp;#39;Sleep&amp;#39; AND Time &amp;gt; 300 ORDER BY Time DESC; Shell 截取有固定格式的长文本的第 n 列 cat example.txt|awk &amp;#39;{print $n}&amp;#39;</description>
+    </item>
+    
+    <item>
+      <title>百宝袋</title>
+      <link>https://hj24.github.io/fav/</link>
+      <pubDate>Sat, 14 Nov 2020 17:45:48 +0800</pubDate>
+      
+      <guid>https://hj24.github.io/fav/</guid>
+      <description>工具 redis 内存估算模型 json 转 go struct 工具 博客 kindjeff，扇贝同事 周而良，扇贝/云账房 倪震洋学长 小米有品Java工程师，高中学长 Django群友，腾讯实习 张佳园，PyConChina讲师</description>
+    </item>
+    
+    <item>
+      <title>关于</title>
+      <link>https://hj24.github.io/about/</link>
+      <pubDate>Sat, 14 Nov 2020 17:37:06 +0800</pubDate>
+      
+      <guid>https://hj24.github.io/about/</guid>
+      <description>个人简介 后端开发工程师@扇贝网 邮箱 mambahj24@gmail.com 永远也不知道怎么写的关于 你好，我是 hj24，不知道你是怎么来到这个博客的，但是非常欢迎你 👏 。 每当我点进一个博客的时候，我最喜欢看的就是关于界面，在这里我也许可以找到</description>
+    </item>
+    
+    <item>
+      <title>Gitlab CI CD指北</title>
+      <link>https://hj24.github.io/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/</link>
+      <pubDate>Wed, 05 Feb 2020 19:50:30 +0800</pubDate>
+      
+      <guid>https://hj24.github.io/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+之前在公司倒腾过基于Gitlab的CI/CD，现在重新记录一遍流程，做个备忘。
+&lt;p&gt;一个典型的流程是这样的：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;提交代码触发CI pipeline -&amp;gt; 安装依赖、编译、自动化测试 -&amp;gt; fix bug
+-&amp;gt; 回到上一步 -&amp;gt; Review代码 -&amp;gt; 合并到发布分支 -&amp;gt; 触发CD -&amp;gt; 部署代码、发布&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;基本上更复杂一些的流程都是在这个基础上增改了，下面来走一遍这个流程。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Things I Don T Know as of 2019</title>
+      <link>https://hj24.github.io/posts/things-i-don-t-know-as-of-2019/</link>
+      <pubDate>Tue, 14 Jan 2020 17:39:47 +0800</pubDate>
+      
+      <guid>https://hj24.github.io/posts/things-i-don-t-know-as-of-2019/</guid>
+      <description>&lt;blockquote&gt;
+&lt;p&gt;创意来自:
+&lt;a href=&#34;https://blog.lovezhy.cc/2019/01/01/Things%20I%20Don%E2%80%99t%20Know%20as%20of%202018/&#34;&gt;lovezhy Things I Don&amp;rsquo;t Know as of 2018&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;春节假期快要结束了，没几天要回去上班，准备春招，因此写下这篇博客，记录过去一年的那些我还不了解的技术，那些我感兴趣但还来得及学的技术。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>解决hexo博客不能显示图床图片问题</title>
+      <link>https://hj24.github.io/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/</link>
+      <pubDate>Sun, 19 May 2019 19:40:51 +0800</pubDate>
+      
+      <guid>https://hj24.github.io/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/</guid>
+      <description>&lt;p&gt;刚搭建好了hexo博客，写了一篇带图的文章，结果发现图挂了…之前看博客扫到hexo博客显示本地图片可能会有问题，于是选了图床图片的方式插图，结果还是没能幸免，好在搜索了半天，解决了这个问题，这里做个记录，帮助后面遇到问题的同学。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+	<meta name="generator" content="Hugo 0.68.3" />
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="hj24" />
+	
+	
+	
+	<title>客舟听雨 ｜ hj24.life </title>
+	
+    
+    
+    <meta name="description" content="hj24&#39;s life log." />
+    
+
+    
+    
+    <meta name="keywords" content="Hugo, theme, zozo" />
+    
+
+	
+	<link rel="alternate" type="application/rss+xml" href="https://hj24.github.io/index.xml" title="客舟听雨" />
+    
+    
+    <link rel="shortcut icon" href="https://hj24.github.io/images/favicon.ico" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.github.io/css/normalize.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.github.io/css/zozo.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.github.io/css/highlight.css" />
+
+    
+    
+</head>
+
+<body>
+    <div class="main animate__animated animate__fadeInDown">
+        <div class="nav_container animated fadeInDown">
+    <div class="site_nav" id="site_nav">
+        <ul>
+            
+            <li>
+                <a href="/">首页</a>
+            </li>
+            
+            <li>
+                <a href="/posts/">归档</a>
+            </li>
+            
+            <li>
+                <a href="/tags/">标签</a>
+            </li>
+            
+            <li>
+                <a href="/fav/">好站</a>
+            </li>
+            
+            <li>
+                <a href="/snippets/">代码片</a>
+            </li>
+            
+            <li>
+                <a href="/about/">关于</a>
+            </li>
+            
+        </ul>
+    </div>
+    <div class="menu_icon">
+        <a id="menu_icon"><i class="ri-menu-line"></i></a>
+    </div>
+</div>
+        <div class="header animated fadeInDown">
+    <div class="site_title_container">
+        <div class="site_title">
+            <h1>
+                <a href="https://hj24.github.io/">
+                    <span>客舟听雨</span>
+                </a>
+            </h1>
+        </div>
+        <div class="description">
+            <p class="sub_title">hj24.life</p>
+            <div class="my_socials">
+                
+                
+                <a href="https://github.com/hj24" title="github" target="_blank"><i class="ri-github-fill"></i></a>
+                
+                
+                
+                <a href="https://www.zhihu.com/people/da-li-ju-13" title="zhihu" target="_blank"><i class="ri-zhihu-fill"></i></a>
+                
+                
+                <a href="https://hj24.github.io/index.xml" type="application/rss+xml" title="rss" target="_blank"><i
+                        class="ri-rss-fill"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="content">
+            
+
+<div class="post animated fadeInDown">
+    <div class="post_title">
+        <h2><a href='/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/'>Hugo使用指北</a></h2>
+    </div>
+    
+    <div class="list">
+        <div class="post_content markdown">
+            <p><meta name="referrer" content="no-referrer" />
+从 hexo 迁移到了 hugo，从安装到部署，记录一下使用流程。</p>
+        </div>
+    </div>
+    
+    <div class="post_footer">
+        <div class="meta">
+            <div class="info">
+                <span class="field">
+                    <i class="ri-map-pin-time-line"></i>
+                    <span class="date">2020.11.14</span>
+                </span>
+                
+                <span class="field tags">
+                    <i class="ri-stack-line"></i>
+                    
+                    <a href="https://hj24.github.io/tags/%E9%87%87%E5%9D%91%E8%AE%B0%E5%BD%95/">采坑记录</a>
+                    
+                </span>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="post animated fadeInDown">
+    <div class="post_title">
+        <h2><a href='/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/'>Gitlab CI CD指北</a></h2>
+    </div>
+    
+    <div class="list">
+        <div class="post_content markdown">
+            <p><meta name="referrer" content="no-referrer" />
+之前在公司倒腾过基于Gitlab的CI/CD，现在重新记录一遍流程，做个备忘。
+<p>一个典型的流程是这样的：</p>
+<blockquote>
+<p>提交代码触发CI pipeline -&gt; 安装依赖、编译、自动化测试 -&gt; fix bug
+-&gt; 回到上一步 -&gt; Review代码 -&gt; 合并到发布分支 -&gt; 触发CD -&gt; 部署代码、发布</p>
+</blockquote>
+<p>基本上更复杂一些的流程都是在这个基础上增改了，下面来走一遍这个流程。</p></p>
+        </div>
+    </div>
+    
+    <div class="post_footer">
+        <div class="meta">
+            <div class="info">
+                <span class="field">
+                    <i class="ri-map-pin-time-line"></i>
+                    <span class="date">2020.02.05</span>
+                </span>
+                
+                <span class="field tags">
+                    <i class="ri-stack-line"></i>
+                    
+                    <a href="https://hj24.github.io/tags/devops/">Devops</a>
+                    
+                </span>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="post animated fadeInDown">
+    <div class="post_title">
+        <h2><a href='/posts/things-i-don-t-know-as-of-2019/'>Things I Don T Know as of 2019</a></h2>
+    </div>
+    
+    <div class="list">
+        <div class="post_content markdown">
+            <p><blockquote>
+<p>创意来自:
+<a href="https://blog.lovezhy.cc/2019/01/01/Things%20I%20Don%E2%80%99t%20Know%20as%20of%202018/">lovezhy Things I Don&rsquo;t Know as of 2018</a></p>
+</blockquote>
+<p>春节假期快要结束了，没几天要回去上班，准备春招，因此写下这篇博客，记录过去一年的那些我还不了解的技术，那些我感兴趣但还来得及学的技术。</p></p>
+        </div>
+    </div>
+    
+    <div class="post_footer">
+        <div class="meta">
+            <div class="info">
+                <span class="field">
+                    <i class="ri-map-pin-time-line"></i>
+                    <span class="date">2020.01.14</span>
+                </span>
+                
+                <span class="field tags">
+                    <i class="ri-stack-line"></i>
+                    
+                    <a href="https://hj24.github.io/tags/things-i-dont-know/">Things I don&#39;t know</a>
+                    
+                </span>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="post animated fadeInDown">
+    <div class="post_title">
+        <h2><a href='/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/'>解决hexo博客不能显示图床图片问题</a></h2>
+    </div>
+    
+    <div class="list">
+        <div class="post_content markdown">
+            <p><p>刚搭建好了hexo博客，写了一篇带图的文章，结果发现图挂了…之前看博客扫到hexo博客显示本地图片可能会有问题，于是选了图床图片的方式插图，结果还是没能幸免，好在搜索了半天，解决了这个问题，这里做个记录，帮助后面遇到问题的同学。</p></p>
+        </div>
+    </div>
+    
+    <div class="post_footer">
+        <div class="meta">
+            <div class="info">
+                <span class="field">
+                    <i class="ri-map-pin-time-line"></i>
+                    <span class="date">2019.05.19</span>
+                </span>
+                
+                <span class="field tags">
+                    <i class="ri-stack-line"></i>
+                    
+                    <a href="https://hj24.github.io/tags/%E9%87%87%E5%9D%91%E8%AE%B0%E5%BD%95/">采坑记录</a>
+                    
+                </span>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="pagination">
+    
+</div>
+        </div>
+    </div>
+    <footer class="footer">
+    <div class="powered_by">
+        <a href="https://varkai.com">Designed by VarKai,</a>
+        <a href="http://www.gohugo.io/">Proudly published with Hugo</a>
+    </div>
+
+    <div class="footer_slogan">
+        <span>hj24&#39;s life log</span>
+    </div>
+</footer>
+    <script src="https://hj24.github.io/js/jquery-3.5.1.min.js"></script>
+<link href="https://hj24.github.io/css/fancybox.min.css" rel="stylesheet">
+<script src="https://hj24.github.io/js/fancybox.min.js"></script>
+<script src="https://hj24.github.io/js/zozo.js"></script>
+
+
+<script type="text/javascript" async
+    src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                TeX: {
+                    equationNumbers: { autoNumber: "AMS" },
+                    extensions: ["AMSmath.js", "AMSsymbols.js"]
+                }
+            }
+        });
+
+        MathJax.Hub.Queue(function () {
+            
+            
+            
+            var all = MathJax.Hub.getAllJax(), i;
+            for (i = 0; i < all.length; i += 1) {
+                all[i].SourceElement().parentNode.className += ' has-jax';
+            }
+        });
+    </script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+
+
+
+</body>
+
+</html>

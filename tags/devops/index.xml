@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Devops on 客舟听雨</title>
+    <link>https://hj24.github.io/tags/devops/</link>
+    <description>Recent content in Devops on 客舟听雨</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Wed, 05 Feb 2020 19:50:30 +0800</lastBuildDate>
+    
+	<atom:link href="https://hj24.github.io/tags/devops/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Gitlab CI CD指北</title>
+      <link>https://hj24.github.io/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/</link>
+      <pubDate>Wed, 05 Feb 2020 19:50:30 +0800</pubDate>
+      
+      <guid>https://hj24.github.io/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+之前在公司倒腾过基于Gitlab的CI/CD，现在重新记录一遍流程，做个备忘。
+&lt;p&gt;一个典型的流程是这样的：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;提交代码触发CI pipeline -&amp;gt; 安装依赖、编译、自动化测试 -&amp;gt; fix bug
+-&amp;gt; 回到上一步 -&amp;gt; Review代码 -&amp;gt; 合并到发布分支 -&amp;gt; 触发CD -&amp;gt; 部署代码、发布&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;基本上更复杂一些的流程都是在这个基础上增改了，下面来走一遍这个流程。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="hj24" />
+	
+	
+	
+	<title>Gitlab CI CD指北 ｜ 客舟听雨</title>
+	
+    
+    
+    <meta name="description" content="之前在公司倒腾过基于Gitlab的CI/CD，现在重新记录一遍流程，做个备忘。 一个典型的流程是这样的：
+ 提交代码触发CI pipeline -&amp;gt; 安装依赖、编译、自动化测试 -&amp;gt; fix bug -&amp;gt; 回到上一步 -&amp;gt; Review代码 -&amp;gt; 合并到发布分支 -&amp;gt; 触发CD -&amp;gt; 部署代码、发布
+ 基本上更复杂一些的流程都是在这个基础上增改了，下面来走一遍这个流程。
+" />
+    
+
+    
+    
+    <meta name="keywords" content="Hugo, theme, zozo" />
+    
+
+	
+    
+    <link rel="shortcut icon" href="https://hj24.github.io/images/favicon.ico" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.github.io/css/normalize.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.github.io/css/zozo.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.github.io/css/highlight.css" />
+
+    
+    
+</head>
+
+<body>
+    <div class="main animate__animated animate__fadeInDown">
+        <div class="nav_container animated fadeInDown">
+    <div class="site_nav" id="site_nav">
+        <ul>
+            
+            <li>
+                <a href="/">首页</a>
+            </li>
+            
+            <li>
+                <a href="/posts/">归档</a>
+            </li>
+            
+            <li>
+                <a href="/tags/">标签</a>
+            </li>
+            
+            <li>
+                <a href="/fav/">好站</a>
+            </li>
+            
+            <li>
+                <a href="/snippets/">代码片</a>
+            </li>
+            
+            <li>
+                <a href="/about/">关于</a>
+            </li>
+            
+        </ul>
+    </div>
+    <div class="menu_icon">
+        <a id="menu_icon"><i class="ri-menu-line"></i></a>
+    </div>
+</div>
+        <div class="header animated fadeInDown">
+    <div class="site_title_container">
+        <div class="site_title">
+            <h1>
+                <a href="https://hj24.github.io/">
+                    <span>客舟听雨</span>
+                </a>
+            </h1>
+        </div>
+        <div class="description">
+            <p class="sub_title">hj24.life</p>
+            <div class="my_socials">
+                
+                
+                <a href="https://github.com/hj24" title="github" target="_blank"><i class="ri-github-fill"></i></a>
+                
+                
+                
+                <a href="https://www.zhihu.com/people/da-li-ju-13" title="zhihu" target="_blank"><i class="ri-zhihu-fill"></i></a>
+                
+                
+                <a href="https://hj24.github.io/index.xml" type="application/rss+xml" title="rss" target="_blank"><i
+                        class="ri-rss-fill"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="content">
+            <div class="post_page">
+                <div class="post animate__animated animate__fadeInDown">
+                    <div class="post_title post_detail_title">
+                        <h2><a href='/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/'>Gitlab CI CD指北</a></h2>
+                        <span class="date">2020.02.05</span>
+                    </div>
+                    <div class="post_content markdown"><meta name="referrer" content="no-referrer" />
+之前在公司倒腾过基于Gitlab的CI/CD，现在重新记录一遍流程，做个备忘。
+<p>一个典型的流程是这样的：</p>
+<blockquote>
+<p>提交代码触发CI pipeline -&gt; 安装依赖、编译、自动化测试 -&gt; fix bug
+-&gt; 回到上一步 -&gt; Review代码 -&gt; 合并到发布分支 -&gt; 触发CD -&gt; 部署代码、发布</p>
+</blockquote>
+<p>基本上更复杂一些的流程都是在这个基础上增改了，下面来走一遍这个流程。</p>
+<ul>
+<li>如果你有账号有项目，想直接知道怎么开始CI/CD，请跳过下面这一节</li>
+</ul>
+<h2 id="准备">准备</h2>
+<p>一般公司用的Gitlab都是自己搭建在内网的，不过好在Gilab提供了一个30天的免费体验活动，可以体验到Gitlab的所有功能，这篇教程就用一个新注册的账号，从头到尾走一遍CI/CD的流程。</p>
+<ol>
+<li>先去注册一个账号:</li>
+</ol>
+<p><img src="https://tva1.sinaimg.cn/large/006tNbRwgy1gblhoz4zzxj315p0rhtel.jpg" alt="注册界面"></p>
+<ol start="2">
+<li>创建一个test项目:</li>
+</ol>
+<p><img src="https://tva1.sinaimg.cn/large/006tNbRwgy1gblhq7x8fzj315t0rhjxy.jpg" alt="创建项目"></p>
+<ol start="3">
+<li>把自己的公钥添加到gitlab的SSH keys里，这就不用我多说了，不知道的可以参考这个教程:</li>
+</ol>
+<blockquote>
+<p><a href="https://www.liaoxuefeng.com/wiki/896043488029600/896954117292416">https://www.liaoxuefeng.com/wiki/896043488029600/896954117292416</a></p>
+</blockquote>
+<ol start="4">
+<li>
+<p>关于概念: <a href="https://www.jianshu.com/p/306cf4c6789a">参考这篇</a>，本文会穿插着提及一些概念，但重点仍放在实现这一套流程上。上面这个博客写的比较清晰，当时搞CI/CD时参考过不少。</p>
+</li>
+<li>
+<p>项目内容准备:</p>
+</li>
+</ol>
+<ul>
+<li>拿一个简单的Python项目做演示</li>
+<li>里面包含了依赖安装，测试，部署这三个过程，基本涵盖了CI/CD需要的基本流程</li>
+</ul>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">目录结构:
+  test/
+      app.py
+      test_app.py
+      requirements.txt
+      README.md
+</code></pre></div><p><strong>app.py</strong>里面是<a href="https://leetcode-cn.com/problems/climbing-stairs/">leetcode 70</a>的解决代码
+加了个run函数来模拟部署时执行开启程序的过程，类比于django的<code>run server</code>命令:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">Solution</span><span class="p">:</span>
+        
+    <span class="k">def</span> <span class="nf">climbStairs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">2</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+            <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span>
+        <span class="k">return</span> <span class="n">c</span>
+
+<span class="k">def</span> <span class="nf">run</span><span class="p">():</span>
+    <span class="n">Solution</span><span class="p">()</span><span class="o">.</span><span class="n">climbStairs</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div><p><strong>test_app.py</strong>里是对app的测试，测试用的是pytest，里面包含了3个简单的测试样例:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">app</span> <span class="kn">import</span> <span class="n">Solution</span>
+
+<span class="k">def</span> <span class="nf">test_app</span><span class="p">():</span>
+	<span class="n">sol</span> <span class="o">=</span> <span class="n">Solution</span><span class="p">()</span>
+
+	<span class="k">assert</span> <span class="n">sol</span><span class="o">.</span><span class="n">climbStairs</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+	<span class="k">assert</span> <span class="n">sol</span><span class="o">.</span><span class="n">climbStairs</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+	<span class="k">assert</span> <span class="n">sol</span><span class="o">.</span><span class="n">climbStairs</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="mi">89</span>
+</code></pre></div><p>pytest测试运行这个文件很简单，只要在当前目录下运行<code>pytest test_app.py</code>就可以了
+准备工作就这么多，下面开始正式的流程</p>
+<h2 id="开始配置cicd">开始配置CI/CD</h2>
+<p>开始之前需要明确一下，一个完整的CI/CD流程如下:</p>
+<blockquote>
+<p>编写好<code>.gitlab-ci.yml</code> -&gt; 本地push代码触发runner -&gt; build-test-deploy
+正常来说deploy时是要把测试完毕的代码pull到服务器的，而我们这个演示runner是安装在本地的
+所以其实过程是本地开发，部署到本地的另一个端口，不过对于演示来讲，没啥区别</p>
+</blockquote>
+<ol>
+<li>安装runner
+runner是CI的运行环境。一般每个项目都会有一个<code>.gitlab-ci.yml</code>脚本来定义CI时要执行的一系列操作，而runner扮演的角色就是在push时被触发，然后在本地执行<code>.gitlab-ci.yml</code>中定义的操作，runner肯定是要安装到本地的，在本地与gitlab服务器通信。</li>
+</ol>
+<blockquote>
+<p>mac: <code>brew install gitlab-runner</code></p>
+</blockquote>
+<p>安装后<code>sudo chmod +x /path/to/gitlab-runner</code>给它添加执行权限
+一般mac安装的地址是: <code>/usr/local/bin/gitlab-runner</code></p>
+<ol start="2">
+<li>注册runner</li>
+</ol>
+<blockquote>
+<p>gitlab的项目-&gt;settings-&gt;CI/CD</p>
+</blockquote>
+<p>下拉到如下页面，可以看到Specific Runners底下有两个标红的信息url和token，这是等会注册时要用的
+<img src="https://tva1.sinaimg.cn/large/006tNbRwgy1gbllkvpkruj31340lcaex.jpg" alt=""></p>
+<p>运行: <code>gitlab-runner register</code>开始注册，会要求你填写如下信息，相关的解释我写在注释中了</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 填写gitlab-ci的url，就是前面在页面上获得的url</span>
+Please enter the gitlab-ci coordinator URL <span class="o">(</span>e.g. https://gitlab.com/<span class="o">)</span>:
+https://gitlab.com/
+
+<span class="c1"># 填写token，写你获取的就好了</span>
+Please enter the gitlab-ci token <span class="k">for</span> this runner:
+xxx
+
+<span class="c1"># 给runner的描述，看情况写</span>
+Please enter the gitlab-ci description <span class="k">for</span> this runner:
+<span class="o">[</span>macbookdeMacBook-Air-2.local<span class="o">]</span>: <span class="nb">test</span>
+
+<span class="c1"># tag，后续的.gitlab-ci.yml要区分用哪个runner执行时需要它</span>
+Please enter the gitlab-ci tags <span class="k">for</span> this runner <span class="o">(</span>comma separated<span class="o">)</span>:
+v1 
+Registering runner... succeeded                     <span class="nv">runner</span><span class="o">=</span>By1ur7Pe
+
+<span class="c1"># 填写executer，由于我们是直接在mac下安装的，没有用docker什么的，直接填shell就好</span>
+<span class="c1"># 当然这个填什么要看你的环境</span>
+Please enter the executor: kubernetes, docker-ssh, parallels, virtualbox, ssh, docker+machine, docker-ssh+machine, custom, docker, shell:
+shell
+Runner registered successfully. Feel free to start it, but <span class="k">if</span> it<span class="err">&#39;</span>s running already the config should be automatically reloaded! 
+</code></pre></div><p>注册完毕之后，可以<code>cat ~/.gitlab-runner/config.toml</code>查看之前注册的配置</p>
+<ol start="3">
+<li>运行
+执行如下命令运行runner:</li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">cd ~
+gitlab-runner install
+gitlab-runner start
+</code></pre></div><p>运行后回到gitlab的settings页面，看到刚才注册的runner状态变绿了，那么说明执行成功：
+<img src="https://tva1.sinaimg.cn/large/006tNbRwgy1gblm0psuv0j30cm054aae.jpg" alt=""></p>
+<h2 id="开始cicd">开始CI/CD</h2>
+<p>开始之前回顾一下GitLab CI/CD的流程:
+1）当我们本地开发完push代码到服务器时触发pipeline来进行构建任务
+2）在pipeline中gitlab runner来运行<code>.gitlab-ci.yml</code>内编写的脚本
+3）<code>.gitlab-ci.yml</code>中的任务是按stages分配的，一个stage结束了才能进入下一个stage，若其中一个失败则后续的都不会执行，整个CI流程也会失败，有一个注意点：stages不能定义具体的执行逻辑，如何执行任务是否job定义的，然后在job中绑定上对应的stage以此来执行任务
+4）job的名字随意定义，主要绑定对了相应的stage就能正常执行</p>
+<p>下面来看具体例子，相关解释写在注释中:</p>
+<ol>
+<li>编写<code>.gitlab-ci.yml</code>
+<strong>ps: 要注意该文件需要符合yaml语法</strong></li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># 定义CI/CD流程需要的stages，以下的build-test-deploy顺序执行</span><span class="w">
+</span><span class="w"></span><span class="k">stages</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span>- build<span class="w">
+</span><span class="w">  </span>- test<span class="w">
+</span><span class="w">  </span>- deploy<span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># 定义各个流程需要的job</span><span class="w">
+</span><span class="w"></span><span class="c">## 构建项目的job，指定运行的runner的tag为v1，就是我们刚才配置的</span><span class="w">
+</span><span class="w"></span><span class="c">## 在这个build任务里，我们简单的安装了项目所需要的依赖</span><span class="w">
+</span><span class="w"></span><span class="c">## 由于runner的executor是shell，所以会在runner所在的机器上创建一个临时的build文件夹存放代码</span><span class="w">
+</span><span class="w"></span><span class="k">job_build</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="k">stage</span><span class="p">:</span><span class="w"> </span>build<span class="w">
+</span><span class="w">  </span><span class="k">tags</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- v1<span class="w">
+</span><span class="w">  </span><span class="k">script</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;installing&#34;</span><span class="w">
+</span><span class="w">    </span>- pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt<span class="w"> </span>-i<span class="w"> </span>https<span class="p">:</span>//mirrors.aliyun.com/pypi/simple/<span class="w">
+</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;finish installing&#34;</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c">## 测试阶段的job，使用pytest运行单元测试</span><span class="w">
+</span><span class="w"></span><span class="k">job_test</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="k">stage</span><span class="p">:</span><span class="w"> </span>test<span class="w">
+</span><span class="w">  </span><span class="k">tags</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- v1<span class="w">
+</span><span class="w">  </span><span class="k">script</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;testing&#34;</span><span class="w">
+</span><span class="w">    </span>- pytest<span class="w"> </span>test_app.py<span class="w">
+</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;finish testing&#34;</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c">## 部署阶段，在脚本开始之前先清空之前部署好的代码文件，注意，这并不是必须的，仅仅只是针对这个示例项目而言</span><span class="w">
+</span><span class="w"></span><span class="c">## 真实项目大都是用git pull更新代码，docker构建镜像之类的</span><span class="w">
+</span><span class="w"></span><span class="c">## 清空旧代码之后git clone拉取最新代码到新目录test_deploy下，进入到项目根目录下运行app.py</span><span class="w">
+</span><span class="w"></span><span class="k">job_deploy</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="k">stage</span><span class="p">:</span><span class="w"> </span>deploy<span class="w">
+</span><span class="w">  </span><span class="k">tags</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- v1<span class="w">
+</span><span class="w">  </span><span class="k">only</span><span class="p">:</span><span class="w"> 
+</span><span class="w">    </span>- master<span class="w">
+</span><span class="w">  </span><span class="k">before_script</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- cd<span class="w"> </span>~/desktop<span class="w">
+</span><span class="w">    </span>- rm<span class="w"> </span>-rf<span class="w"> </span>test_deploy/<span class="w">
+</span><span class="w">    </span>- mkdir<span class="w"> </span>test_deploy<span class="w">
+</span><span class="w">    </span>- cd<span class="w"> </span>test_deploy<span class="w">
+</span><span class="w">  </span><span class="k">script</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;deploying&#34;</span><span class="w">
+</span><span class="w">    </span>- git<span class="w"> </span>clone<span class="w"> </span>git@gitlab.com<span class="p">:</span>mambahj/test.git<span class="w">
+</span><span class="w">    </span>- cd<span class="w"> </span>test<span class="w">
+</span><span class="w">    </span>- python<span class="w"> </span>app.py<span class="w">
+</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;finish deploying&#34;</span><span class="w">
+</span></code></pre></div><ol start="2">
+<li>push代码，执行CI/CD流程</li>
+</ol>
+<blockquote>
+<p>git add -&gt; git commit -&gt; git push</p>
+</blockquote>
+<p>回到Gitlab，可以看到pipeline被触发，runner开始执行CI/CD任务
+<img src="https://tva1.sinaimg.cn/large/006tNbRwgy1gblux8a67sj30w805jdgr.jpg" alt="">
+最后，流程执行完毕，去test_deploy目录可以看到，代码被正常拉取和执行
+<img src="https://tva1.sinaimg.cn/large/006tNbRwgy1gbluyqgm01j30r103qt9a.jpg" alt=""></p>
+<h2 id="一些思考">一些思考</h2>
+<p>后来去百度面试的时候问到对CI和CD的理解，CI阶段应该做些什么，CD阶段应该做什么，感觉这个问题用来结束这篇博客不错。</p>
+<p>CI也就是持续集成，我的理解是这个阶段在代码被合并之前，应该负责做好完善的测试和构建检查工作，尽可能的发现并解决问题来保证合并后的代码的质量。
+CD指的是持续交付，也就是我们的应用发布出去的过程，这个阶段主要要做好自动构建和发布代码的工作，我的理解是这一阶段的主要目的是为了快速的进行产品的交付，缩短发布周期吧，如果没有CD过程，以前发布时都是人工跑命令，跑脚本，出错了去定位，公司之前有个其它组的老哥，每次发代码之前都会留下来加班&hellip;
+当然，缩短了发布周期之后即会带来好处，也会带来坏处，好处是开发效率的提高，开发人员不用把精力放在繁琐重复的发代码流程上，而且产品的反馈也更快，相应的完善速度也会更快，产品肯定会做的往好的方向发展的。但坏处就是，开发团队的压力肯定就会大了，平时半月或者一个月一发，现在每周每天都会发&hellip;等着加班吧&hellip;</p>
+<h2 id="参考">参考</h2>
+<ol>
+<li><a href="https://zhuanlan.zhihu.com/p/69513606">花椒前端基于 GitLab CI/CD 的自动化构建、发布实践</a></li>
+<li><a href="https://www.jianshu.com/p/306cf4c6789a">简书-Gitlab CI/CD的执行流程</a></li>
+</ol></div>
+                    <div class="post_footer">
+                        
+                        <div class="meta">
+                            <div class="info">
+                                <span class="field tags">
+                                    <i class="ri-stack-line"></i>
+                                    
+                                    <a href="https://hj24.github.io/tags/devops/">Devops</a>
+                                    
+                                </span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                
+                <div class="doc_comments"></div>
+                
+            </div>
+        </div>
+    </div>
+    <a id="back_to_top" href="#" class="back_to_top"><i class="ri-arrow-up-s-line"></i></a>
+    <footer class="footer">
+    <div class="powered_by">
+        <a href="https://varkai.com">Designed by VarKai,</a>
+        <a href="http://www.gohugo.io/">Proudly published with Hugo</a>
+    </div>
+
+    <div class="footer_slogan">
+        <span>hj24&#39;s life log</span>
+    </div>
+</footer>
+    <script src="https://hj24.github.io/js/jquery-3.5.1.min.js"></script>
+<link href="https://hj24.github.io/css/fancybox.min.css" rel="stylesheet">
+<script src="https://hj24.github.io/js/fancybox.min.js"></script>
+<script src="https://hj24.github.io/js/zozo.js"></script>
+
+
+<script type="text/javascript" async
+    src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                TeX: {
+                    equationNumbers: { autoNumber: "AMS" },
+                    extensions: ["AMSmath.js", "AMSsymbols.js"]
+                }
+            }
+        });
+
+        MathJax.Hub.Queue(function () {
+            
+            
+            
+            var all = MathJax.Hub.getAllJax(), i;
+            for (i = 0; i < all.length; i += 1) {
+                all[i].SourceElement().parentNode.className += ' has-jax';
+            }
+        });
+    </script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+
+
+
+</body>
+
+</html>
