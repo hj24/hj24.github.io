@@ -2,31 +2,31 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on 客舟听雨</title>
-    <link>https://hj24.github.io/posts/</link>
+    <link>https://hj24.life/posts/</link>
     <description>Recent content in Posts on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <lastBuildDate>Sat, 14 Nov 2020 19:54:13 +0800</lastBuildDate>
     
-	<atom:link href="https://hj24.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://hj24.life/posts/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Hugo使用指北</title>
-      <link>https://hj24.github.io/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/</link>
+      <link>https://hj24.life/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/</link>
       <pubDate>Sat, 14 Nov 2020 19:54:13 +0800</pubDate>
       
-      <guid>https://hj24.github.io/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/</guid>
+      <guid>https://hj24.life/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/</guid>
       <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
 从 hexo 迁移到了 hugo，从安装到部署，记录一下使用流程。</description>
     </item>
     
     <item>
       <title>Gitlab CI CD指北</title>
-      <link>https://hj24.github.io/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/</link>
+      <link>https://hj24.life/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/</link>
       <pubDate>Wed, 05 Feb 2020 19:50:30 +0800</pubDate>
       
-      <guid>https://hj24.github.io/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/</guid>
+      <guid>https://hj24.life/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/</guid>
       <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
 之前在公司倒腾过基于Gitlab的CI/CD，现在重新记录一遍流程，做个备忘。
 &lt;p&gt;一个典型的流程是这样的：&lt;/p&gt;
@@ -39,10 +39,10 @@
     
     <item>
       <title>Things I Don T Know as of 2019</title>
-      <link>https://hj24.github.io/posts/things-i-don-t-know-as-of-2019/</link>
+      <link>https://hj24.life/posts/things-i-don-t-know-as-of-2019/</link>
       <pubDate>Tue, 14 Jan 2020 17:39:47 +0800</pubDate>
       
-      <guid>https://hj24.github.io/posts/things-i-don-t-know-as-of-2019/</guid>
+      <guid>https://hj24.life/posts/things-i-don-t-know-as-of-2019/</guid>
       <description>&lt;blockquote&gt;
 &lt;p&gt;创意来自:
 &lt;a href=&#34;https://blog.lovezhy.cc/2019/01/01/Things%20I%20Don%E2%80%99t%20Know%20as%20of%202018/&#34;&gt;lovezhy Things I Don&amp;rsquo;t Know as of 2018&lt;/a&gt;&lt;/p&gt;
@@ -52,10 +52,10 @@
     
     <item>
       <title>解决hexo博客不能显示图床图片问题</title>
-      <link>https://hj24.github.io/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/</link>
+      <link>https://hj24.life/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/</link>
       <pubDate>Sun, 19 May 2019 19:40:51 +0800</pubDate>
       
-      <guid>https://hj24.github.io/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/</guid>
+      <guid>https://hj24.life/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/</guid>
       <description>&lt;p&gt;刚搭建好了hexo博客，写了一篇带图的文章，结果发现图挂了…之前看博客扫到hexo博客显示本地图片可能会有问题，于是选了图床图片的方式插图，结果还是没能幸免，好在搜索了半天，解决了这个问题，这里做个记录，帮助后面遇到问题的同学。&lt;/p&gt;</description>
     </item>
     

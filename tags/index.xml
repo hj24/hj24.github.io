@@ -2,39 +2,39 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on 客舟听雨</title>
-    <link>https://hj24.github.io/tags/</link>
+    <link>https://hj24.life/tags/</link>
     <description>Recent content in Tags on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <lastBuildDate>Sat, 14 Nov 2020 19:54:13 +0800</lastBuildDate>
     
-	<atom:link href="https://hj24.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://hj24.life/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>采坑记录</title>
-      <link>https://hj24.github.io/tags/%E9%87%87%E5%9D%91%E8%AE%B0%E5%BD%95/</link>
+      <link>https://hj24.life/tags/%E9%87%87%E5%9D%91%E8%AE%B0%E5%BD%95/</link>
       <pubDate>Sat, 14 Nov 2020 19:54:13 +0800</pubDate>
       
-      <guid>https://hj24.github.io/tags/%E9%87%87%E5%9D%91%E8%AE%B0%E5%BD%95/</guid>
+      <guid>https://hj24.life/tags/%E9%87%87%E5%9D%91%E8%AE%B0%E5%BD%95/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Devops</title>
-      <link>https://hj24.github.io/tags/devops/</link>
+      <link>https://hj24.life/tags/devops/</link>
       <pubDate>Wed, 05 Feb 2020 19:50:30 +0800</pubDate>
       
-      <guid>https://hj24.github.io/tags/devops/</guid>
+      <guid>https://hj24.life/tags/devops/</guid>
       <description></description>
     </item>
     
     <item>
       <title>Things I don&#39;t know</title>
-      <link>https://hj24.github.io/tags/things-i-dont-know/</link>
+      <link>https://hj24.life/tags/things-i-dont-know/</link>
       <pubDate>Tue, 14 Jan 2020 17:39:47 +0800</pubDate>
       
-      <guid>https://hj24.github.io/tags/things-i-dont-know/</guid>
+      <guid>https://hj24.life/tags/things-i-dont-know/</guid>
       <description></description>
     </item>
     
