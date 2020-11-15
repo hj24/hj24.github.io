@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="hj24" />
+	
+	
+	
+	<title>Dockerfile编写指北 ｜ 客舟听雨</title>
+	
+    
+    
+    <meta name="description" content="刚开始接触docker时大家基本都是通过`docker pull`命令来拉取镜像，在此基础上`docker exec/run`这些命令，进入容器做一些配置上的修改以此来构建一个容器，而Dockerfile就是一个一劳永益的构建镜像的方法，通过编写Dockerfile来定制自己的镜像。 说白了，就是类似于Python项目的requirements.txt文件，你可以在里面写上自己需要的依赖包，然后安装构建自己项目的依赖:
+ requirements.txt =&amp;gt; Dockerfile pip install =&amp;gt; docker build
+ 这篇博客会以构建一个简单的Postgres镜像为例，讲一讲用Dockerfile来定制自己的镜像的过程。
+" />
+    
+
+    
+    
+    <meta name="keywords" content="Hugo, theme, zozo" />
+    
+
+	
+    
+    <link rel="shortcut icon" href="https://hj24.life/images/favicon.ico" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.lifecss/normalize.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/zozo.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/highlight.css" />
+
+    
+    
+</head>
+
+<body>
+    <div class="main animate__animated animate__fadeInDown">
+        <div class="nav_container animated fadeInDown">
+    <div class="site_nav" id="site_nav">
+        <ul>
+            
+            <li>
+                <a href="/">首页</a>
+            </li>
+            
+            <li>
+                <a href="/posts/">归档</a>
+            </li>
+            
+            <li>
+                <a href="/tags/">标签</a>
+            </li>
+            
+            <li>
+                <a href="/fav/">好站</a>
+            </li>
+            
+            <li>
+                <a href="/snippets/">代码片</a>
+            </li>
+            
+            <li>
+                <a href="/about/">关于</a>
+            </li>
+            
+        </ul>
+    </div>
+    <div class="menu_icon">
+        <a id="menu_icon"><i class="ri-menu-line"></i></a>
+    </div>
+</div>
+        <div class="header animated fadeInDown">
+    <div class="site_title_container">
+        <div class="site_title">
+            <h1>
+                <a href="https://hj24.life">
+                    <span>客舟听雨</span>
+                </a>
+            </h1>
+        </div>
+        <div class="description">
+            <p class="sub_title">hj24.life</p>
+            <div class="my_socials">
+                
+                
+                <a href="https://github.com/hj24" title="github" target="_blank"><i class="ri-github-fill"></i></a>
+                
+                
+                
+                <a href="https://www.zhihu.com/people/da-li-ju-13" title="zhihu" target="_blank"><i class="ri-zhihu-fill"></i></a>
+                
+                
+                <a href="https://hj24.life/index.xml" type="application/rss+xml" title="rss" target="_blank"><i
+                        class="ri-rss-fill"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="content">
+            <div class="post_page">
+                <div class="post animate__animated animate__fadeInDown">
+                    <div class="post_title post_detail_title">
+                        <h2><a href='/posts/dockerfile%E7%BC%96%E5%86%99%E6%8C%87%E5%8C%97/'>Dockerfile编写指北</a></h2>
+                        <span class="date">2020.01.30</span>
+                    </div>
+                    <div class="post_content markdown"><meta name="referrer" content="no-referrer" />
+刚开始接触docker时大家基本都是通过`docker pull`命令来拉取镜像，在此基础上`docker exec/run`这些命令，进入容器做一些配置上的修改以此来构建一个容器，而Dockerfile就是一个一劳永益的构建镜像的方法，通过编写Dockerfile来定制自己的镜像。
+<p>说白了，就是类似于Python项目的requirements.txt文件，你可以在里面写上自己需要的依赖包，然后安装构建自己项目的依赖:</p>
+<blockquote>
+<p>requirements.txt =&gt; Dockerfile
+pip install =&gt; docker build</p>
+</blockquote>
+<p>这篇博客会以构建一个简单的Postgres镜像为例，讲一讲用Dockerfile来定制自己的镜像的过程。</p>
+<h1 id="定制一个postgres镜像">定制一个Postgres镜像</h1>
+<h2 id="一些基本概念">一些基本概念</h2>
+<p><strong>如果你已经了解过Dockerfile的语法，可以直接跳过这一节</strong></p>
+<p>网上找了张图，可以参考一下:
+<img src="https://tva1.sinaimg.cn/large/006tNbRwgy1gbexi2raezj30g608pq9w.jpg" alt="Dockerfile图解"></p>
+<p>Dockerfile是有它的基本语法的，它由一行行命令语句组成，其中注释以#开头，并且，一个完整的Dockerfile一般包含下面这几部分：</p>
+<ol>
+<li>
+<p>基础镜像
+由<code>FROM 基础镜像</code>这个命令来使用，标志着我们定制的镜像是以哪个镜像作为基础进行制作的。
+举个栗子: <code>FROM postgres:latest</code></p>
+</li>
+<li>
+<p>维护者信息
+这里要写上Dockerfile编写者的信息，一般写上自己的邮箱或者nickname就可以，用法是<code>MAINTAINER 个人信息</code>。
+栗子: <code>MAINTAINER mambahj24@gmail.com</code></p>
+</li>
+<li>
+<p>镜像的操作命令
+当我们需要定制一个镜像的时候，肯定是要运行一些命令（安装一些依赖，修改一些配置等等）来对基础镜像做一些修改的，一般使用<code>RUN 具体命令</code>来操作，RUN的默认权限是sudo。
+需要注意的是，如果你需要执行多个RUN操作，那最好把它们合并在一行 (<strong>用&amp;&amp;连接</strong>)，因为每执行一次RUN就会在docker上新建一层镜像，所以分开来写很多个RUN的结果就是会导致整个镜像无意义的过大膨胀。
+正确的做法:</p>
+</li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">RUN apt-get update <span class="o">&amp;&amp;</span> apt-get install vim
+</code></pre></div><p>不提倡的做法：</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">RUN apt-get update
+RUN apy-get install vim
+</code></pre></div><ol start="4">
+<li>容器启动时执行的命令
+需要用CMD来执行一些容器启动时的命令，注意与RUN的区别，CMD是在<code>docker run</code>执行的时候使用，而RUN则是在<code>docker build</code>的时候使用，还有，<strong>划重点</strong>，一个Dockerfile只有最后一个CMD会起作用。
+栗子：</li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">CMD <span class="o">[</span><span class="s2">&#34;/usr/bin/wc&#34;</span>,<span class="s2">&#34;--help&#34;</span><span class="o">]</span>
+</code></pre></div><p>除了以上这4个部分，ENV（设置环境变量）、EXPOSE（暴露容器内部端口）也很常用，用法分别是：</p>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">ENV &lt;KEY&gt; &lt;VALUE&gt;
+
+EXPOSE 端口号
+</code></pre></div><h2 id="开始定制一个镜像">开始定制一个镜像</h2>
+<p>开始定制postgres镜像之前，我有一个简单的需求：定制的镜像中要装好vim（docker pull 拉取的默认镜像是没有的）并且要设置好我需要的配置。</p>
+<p>接下来就以这个简单的需求来开始定制了。</p>
+<ol>
+<li>首先，我们肯定是要在docker提供的postgres镜像上进行定制，当然你要是费心费力的从ubuntu镜像从头安装配置postgres也是可以的，不过实在没必要。。。浪费时间。。</li>
+</ol>
+<ol>
+<li>
+<p><code>docker search postgres</code>查找已有的镜像，选一个版本作为基础镜像，这里我直接选了最新的<code>postgres:latest</code>。</p>
+</li>
+<li>
+<p>写好FROM和MAINTAINER</p>
+</li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="c"># Version 1.0</span><span class="err">
+</span><span class="err"></span><span class="k">FROM</span><span class="s"> postgres:latest</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="k">MAINTAINER</span><span class="s"> mambahj24@gmail.com</span><span class="err">
+</span></code></pre></div><ol start="2">
+<li>拉取的镜像里是没有装vim的，因此我们定制时要装好vim，继续写RUN，在<code>docker build</code>时运行好安装vim的命令</li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="c"># Version 1.0</span><span class="err">
+</span><span class="err"></span><span class="k">FROM</span><span class="s"> postgres:latest</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c"># 维护者</span><span class="err">
+</span><span class="err"></span><span class="k">MAINTAINER</span><span class="s"> mambahj24@gmail.com</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c"># 镜像操作命令</span><span class="err">
+</span><span class="err"></span><span class="k">RUN</span> apt-get update <span class="o">&amp;&amp;</span> apt-get install vim -y<span class="err">
+</span></code></pre></div><ol start="3">
+<li>除了给镜像安装vim之外，我还需要在镜像定制时设置好postgres的密码，并暴露出postgres的默认端口5432：</li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-dockerfile" data-lang="dockerfile"><span class="c"># Postgre image for graduation design</span><span class="err">
+</span><span class="err"></span><span class="c"># Version 1.0</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c"># 基础镜像 最新的postgres</span><span class="err">
+</span><span class="err"></span><span class="k">FROM</span><span class="s"> postgres:latest</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c"># 维护者信息</span><span class="err">
+</span><span class="err"></span><span class="k">MAINTAINER</span><span class="s"> mambahj24@gmail.com</span><span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c"># 镜像操作命令</span><span class="err">
+</span><span class="err"></span><span class="k">RUN</span> apt-get update <span class="o">&amp;&amp;</span> apt-get install vim -y<span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c"># 设置环境变量</span><span class="err">
+</span><span class="err"></span><span class="k">ENV</span> POSTGRES_PASSWORD 你自己设置的密码<span class="err">
+</span><span class="err">
+</span><span class="err"></span><span class="c"># 暴露端口</span><span class="err">
+</span><span class="err"></span><span class="k">EXPOSE</span><span class="s"> 5432</span><span class="err">
+</span></code></pre></div><p>至此我们需要定制的这个Dockerfile就完成了，下面就是开始build了。</p>
+<ol start="4">
+<li>写好了Dockerfile之后，就要使用<code>docker build</code>来定制了，该命令可以指定Dockerfile的路径</li>
+</ol>
+<p>关于这个路径，我一般是这么安排的，分为两类：
+1）第一类，项目中的Dockerfile</p>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">proj/
+    otherfiles
+    ...
+    Dockerfile
+    ...
+    otherfiles
+</code></pre></div><p>这一类直接在项目根目录下运行<code>docker build .</code>来根据上下文找到Dockerfile, 注意：可以通过.dockerignore文件排除上下文目录下，不需要的文件和目录。</p>
+<p>2）第二类，构建不以项目为单位的，我一般会把目录结构这么划分：</p>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">dockerfiledir/
+    imagesname1/
+        Dockerfile
+    imagesname2/
+        Dockerfile
+    ...
+    imagesnameX/
+        Dockerfile
+</code></pre></div><p>然后通过<code>docker build -f /path/to/Dockerfile</code>来构建。</p>
+<p>好了，言归正传，我们运行<code>docker build</code>来构建我们定制好的镜像：</p>
+<p><code>docker build -t pgsql:v1 -f /path/to/Dockerfile</code></p>
+<p><strong>补充一下，-t参数指镜像的标签信息，:前的部分为REPOSITORY名，:后面是TAG名</strong></p>
+<p>在运行Dockerfile内的命令之前，首先会对它的语法进行检查，如果出错，会返回相关信息，没有问题的话会继续build下去，运行完毕之后可以运行<code>docker images</code>查看有没有build成功：</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+pgsql               v1                  268d1c521b18        <span class="m">16</span> seconds ago      446MB
+menginx             latest              01ecef387cfa        <span class="m">4</span> weeks ago         177MB
+postgres            latest              ec5d6d5f5b34        <span class="m">4</span> weeks ago         394MB
+hello-world         latest              fce289e99eb9        <span class="m">13</span> months ago       1.84kB
+</code></pre></div><p>成功之后运行:</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">docker run --name 容器名 -e <span class="nv">POSTGRES_PASSWORD</span><span class="o">=</span>密码 -p 5431:5432 -d pgsql:v1
+</code></pre></div><p>把里面的容器名和密码改成你自己要设置的，就可以运行postgres容器了，设置完毕之后可以用pgAdmin或navicate或者其他能连接postgresql的工具连接看看。</p>
+<p>最后，<code>docker ps -a</code>检查一下，看看该容器是否运行起来。</p>
+<p><strong>注意，如果部署在服务器上可能需要设置安全组（类似于防火墙）将端口暴露给外网，来让外网访问那台服务器上某个端口上运行的程序。</strong></p>
+<p>至此，镜像已经定制完毕，希望对大家有所帮助。</p>
+<h2 id="参考">参考</h2>
+<ol>
+<li><a href="https://zhuanlan.zhihu.com/p/26904830">知乎-如何编写最佳的Dockerfile</a></li>
+<li><a href="https://docs.docker.com/develop/develop-images/dockerfile_best-practices/">docs.docker.com-Docker最佳实践-英文</a></li>
+<li><a href="https://yeasy.gitbooks.io/docker_practice/appendix/best_practices.html">dockerfile最佳实践-中文</a></li>
+<li><a href="https://www.cnblogs.com/liuyansheng/p/6098470.html">cnblogs-编写Dockerfile</a></li>
+<li><a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html">阮一峰-Docker入门教程</a></li>
+<li><a href="https://www.jianshu.com/p/ae634ffb21ff">Dockerfile设置环境变量</a></li>
+<li><a href="https://www.jianshu.com/p/ea4a00c6c21c">docker run 命令参数及使用</a></li>
+<li><a href="https://www.cnblogs.com/panwenbin-logs/p/8007348.html">Dockerfile文件详解</a></li>
+</ol></div>
+                    <div class="post_footer">
+                        
+                        <div class="meta">
+                            <div class="info">
+                                <span class="field tags">
+                                    <i class="ri-stack-line"></i>
+                                    
+                                    <a href="https://hj24.life/tags/devops/">Devops</a>
+                                    
+                                </span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                
+                
+<div class="doc_comments">
+	<div id="gitalk-container"></div>
+</div>
+<link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<script type="text/javascript">
+let gitalk = new Gitalk({
+  clientID: '946e62e1049edfb63fd7',
+  clientSecret: 'ea3d0fcb9025fb88bd8dd50742bcf43dacd6af34',
+  repo: 'hj24.github.io',
+  owner: 'hj24',
+  admin: ['hj24'],
+  id: '2020-01-30 15:34:40 \x2b0800 CST',      
+  distractionFreeMode: false,  
+  title : 'Dockerfile编写指北',
+  labels : []
+});
+gitalk.render('gitalk-container')
+</script>
+                
+            </div>
+        </div>
+    </div>
+    <a id="back_to_top" href="#" class="back_to_top"><i class="ri-arrow-up-s-line"></i></a>
+    <footer class="footer">
+    <div class="powered_by">
+        <a href="https://varkai.com">Designed by VarKai,</a>
+        <a href="http://www.gohugo.io/">Proudly published with Hugo</a>
+    </div>
+
+    <div class="footer_slogan">
+        <span>hj24&#39;s life log</span>
+    </div>
+</footer>
+    <script src="https://hj24.life/js/jquery-3.5.1.min.js"></script>
+<link href="https://hj24.life/css/fancybox.min.css" rel="stylesheet">
+<script src="https://hj24.life/js/fancybox.min.js"></script>
+<script src="https://hj24.life/js/zozo.js"></script>
+
+
+<script type="text/javascript" async
+    src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                TeX: {
+                    equationNumbers: { autoNumber: "AMS" },
+                    extensions: ["AMSmath.js", "AMSsymbols.js"]
+                }
+            }
+        });
+
+        MathJax.Hub.Queue(function () {
+            
+            
+            
+            var all = MathJax.Hub.getAllJax(), i;
+            for (i = 0; i < all.length; i += 1) {
+                all[i].SourceElement().parentNode.className += ' has-jax';
+            }
+        });
+    </script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+
+
+
+</body>
+
+</html>

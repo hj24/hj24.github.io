@@ -112,7 +112,7 @@
 <p>使用下面的命令生成你的博客框架:</p>
 <div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell">hugo new site /path/to/site
 </code></pre></div><h2 id="安装皮肤">安装皮肤</h2>
-<p>中文站有个皮肤列表：https://www.gohugo.org/theme/</p>
+<p>中文站有个<a href="https://www.gohugo.org/theme/">皮肤列表</a>，不过比较少，感兴趣可以去看看。</p>
 <p>如果你觉得不够，可以找一些其他的第三方主题，知乎有个相关的问题：<a href="https://www.zhihu.com/question/266175192">有哪些好看的hugo主题</a>，一般主题里都会写怎么使用，以我安装的zozo主题为例：</p>
 <div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell"><span class="c1"># 进入站点目录</span>
 <span class="nb">cd</span> /path/to/site
@@ -137,15 +137,97 @@ git clone https://github.com/varkai/hugo-theme-zozo themes/zozo
     <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
 {{ end }}
 </code></pre></div><p>去掉了<code>&lt;p&gt;{{ .Summary }}......&lt;/p&gt;</code>里面的省略号就可以了。</p>
-<h3 id="添加文章版权">添加文章版权</h3>
+<h3 id="添加-gittalk">添加 gittalk</h3>
+<p>旧博客用了 gittalk 做评论系统，这里得把它迁移过来，不过我没有选择直接改主题的框架，hugo 有个很优秀的特点是它的主题和你站点的目录结构是一样的，如果你需要修改主题，也可以直接在你站点对应的目录下添加内容，覆盖主题，这就为我们修改主题提供了很大的主观能动性。</p>
+<p>比如我要修改的是评论模块，这个在主题里的路径是：<code>/path/to/site/themes/{theme}/layouts/partials/comments.html</code>，我只需要再站点目录的<code>/path/to/site/layouts/partials/comments.html</code>写对应的内容就能覆盖这一部分了。</p>
+<p>下面就给个例子，不同模板得看着自己的css样式啥的改成对应的，不过gittalk接入的代码都是一样的：</p>
+<div class="highlight"><pre class="chroma"><code class="language-html" data-lang="html"><span class="c">&lt;!-- gitalk --&gt;</span>
+<span class="p">&lt;</span><span class="nt">div</span> <span class="na">class</span><span class="o">=</span><span class="s">&#34;doc_comments&#34;</span><span class="p">&gt;</span>
+	<span class="p">&lt;</span><span class="nt">div</span> <span class="na">id</span><span class="o">=</span><span class="s">&#34;gitalk-container&#34;</span><span class="p">&gt;&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&#34;stylesheet&#34;</span> <span class="na">href</span><span class="o">=</span><span class="s">&#34;https://unpkg.com/gitalk/dist/gitalk.css&#34;</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">&#34;https://unpkg.com/gitalk/dist/gitalk.min.js&#34;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+
+<span class="p">&lt;</span><span class="nt">script</span> <span class="na">type</span><span class="o">=</span><span class="s">&#34;text/javascript&#34;</span><span class="p">&gt;</span>
+<span class="kd">let</span> <span class="nx">gitalk</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Gitalk</span><span class="p">({</span>
+  <span class="nx">clientID</span><span class="o">:</span> <span class="s1">&#39;换成你自己的&#39;</span><span class="p">,</span>
+  <span class="nx">clientSecret</span><span class="o">:</span> <span class="s1">&#39;换成你自己的&#39;</span><span class="p">,</span>
+  <span class="nx">repo</span><span class="o">:</span> <span class="s1">&#39;xxx.github.io&#39;</span><span class="p">,</span>
+  <span class="nx">owner</span><span class="o">:</span> <span class="s1">&#39;xxx&#39;</span><span class="p">,</span>
+  <span class="nx">admin</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;xxx&#39;</span><span class="p">],</span>
+  <span class="nx">id</span><span class="o">:</span> <span class="s1">&#39;{{ .Params.Date }}&#39;</span><span class="p">,</span>      <span class="c1">// Ensure uniqueness and length less than 50
+</span><span class="c1"></span>  <span class="nx">distractionFreeMode</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>  <span class="c1">// Facebook-like distraction free mode
+</span><span class="c1"></span>  <span class="nx">title</span> <span class="o">:</span> <span class="s1">&#39;{{ .Params.Title }}&#39;</span><span class="p">,</span>
+  <span class="nx">labels</span> <span class="o">:</span> <span class="p">[]</span>
+<span class="p">});</span>
+<span class="nx">gitalk</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="s1">&#39;gitalk-container&#39;</span><span class="p">)</span>
+<span class="p">&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+</code></pre></div><p>接入 gittalk 之前要去申请 Github OAuth App，可以点<a href="https://github.com/settings/applications/new">这里</a>申请，几个需要填写的内容：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>内容</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Application name</td>
+<td>取一个名字</td>
+<td>填写应用名称</td>
+</tr>
+<tr>
+<td>Homepage URL</td>
+<td>https://你的域名</td>
+<td>主页地址</td>
+</tr>
+<tr>
+<td>Application description</td>
+<td>描述，自己写就可以了</td>
+<td>备注</td>
+</tr>
+<tr>
+<td>Authorization callback URL</td>
+<td>和上面的域名一样</td>
+<td>回调地址</td>
+</tr>
+</tbody>
+</table>
+<p>注册完之后拿着你的 clientID 和 clientSecret 填到上面，在配置里把原主题自带的评论选项打开，就可以完成覆盖了:</p>
+<div class="highlight"><pre class="chroma"><code class="language-toml" data-lang="toml"><span class="p">[</span><span class="nx">params</span><span class="p">.</span><span class="nx">valine</span><span class="p">]</span>
+  <span class="nx">enable</span> <span class="p">=</span> <span class="kc">true</span>
+  <span class="nx">appId</span> <span class="p">=</span> <span class="s2">&#34;&#34;</span>
+  <span class="nx">appKey</span> <span class="p">=</span> <span class="s2">&#34;&#34;</span>
+  <span class="nx">placeholder</span> <span class="p">=</span> <span class="s2">&#34; &#34;</span>
+  <span class="nx">visitor</span> <span class="p">=</span> <span class="kc">true</span>
+</code></pre></div><h3 id="添加文章版权">添加文章版权</h3>
 <p>TODO，不太懂前端的那一套，等有机会学了改一下样式，把这个添加进去。</p>
 <h2 id="运行与部署">运行与部署</h2>
 <p>运行<code>hugo server --theme=hyde --buildDrafts</code>在本地访问<code>http://localhost:1313</code>查看效果。</p>
 <h3 id="部署">部署</h3>
-<p>这里我会把它部署到 github，并且绑定上自己的域名。</p>
+<p>这里我会把它部署到 github pages，并且绑定上自己的域名。</p>
+<p>绑定到 github pages 很简单，按下面这么做，把 theme 和 baseUrl 换成你自己的：</p>
+<div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell"><span class="c1"># 这一步会生成你的站点到 public 目录下</span> 
+hugo --theme<span class="o">=</span>zozo --baseUrl<span class="o">=</span><span class="s2">&#34;https://hj24.github.io/&#34;</span>
+
+<span class="c1"># 进入 public 把它初始化成 git 仓库，并关联你的远程仓库地址</span>
+<span class="nb">cd</span> /path/to/site/public
+git init
+git remote add origin https://github.com/hj24/hj24.github.io.git
+git add -A
+git commit -m <span class="s2">&#34;first commit&#34;</span>
+git push -u origin master
+</code></pre></div><p>这一步做完你就可以访问 <code>https://xxx.github.io</code> 访问你的站点了。如果你有自己的域名，想实现自己的域名访问，那么你还需要额外做两步：</p>
 <ol>
-<li></li>
+<li>
+<p>在你的域名服务商哪里配置一条 CNAME 记录，CNAME 简单来说就是别名，让你的域名解析到另一个域名上，我们要做的就是把自己的域名配一条 CNAME 指向 <code>xxx.github.io</code>域名。</p>
+</li>
+<li>
+<p>在 github pages 设置里填上 <code>custom domain</code>选项，并勾上 <code>Enforce https</code>（可选）</p>
+</li>
 </ol>
+<p>然后就完事了，你就可以愉快的用自己的域名访问自己的 hugo 博客了。</p>
 <h2 id="参考">参考</h2>
 <ol>
 <li><a href="https://y4er.com/post/hello-world/">y4er的如何修改模板的博客</a></li>
@@ -159,7 +241,7 @@ git clone https://github.com/varkai/hugo-theme-zozo themes/zozo
                                 <span class="field tags">
                                     <i class="ri-stack-line"></i>
                                     
-                                    <a href="https://hj24.life/tags/%E9%87%87%E5%9D%91%E8%AE%B0%E5%BD%95/">采坑记录</a>
+                                    <a href="https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/">踩坑记录</a>
                                     
                                 </span>
                             </div>

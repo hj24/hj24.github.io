@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>操作系统 on 客舟听雨</title>
+    <link>https://hj24.life/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/</link>
+    <description>Recent content in 操作系统 on 客舟听雨</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Wed, 29 Jan 2020 15:36:16 +0800</lastBuildDate>
+    
+	<atom:link href="https://hj24.life/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>进程线程和协程浅析</title>
+      <link>https://hj24.life/posts/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E5%92%8C%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/</link>
+      <pubDate>Wed, 29 Jan 2020 15:36:16 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E5%92%8C%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+不管考研还是工作，进程线程总是一个避免不了的问题，除此之外，协程也是高并发编程必备的技能
+&lt;p&gt;这篇博客照旧还是以问题为导向，如果看完能回答出下面这些问题，那么应该就初步掌握了这些点，剩下的部分就需要你不断code，不断深挖技术书籍，在实践中提升自己的理解:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;进程、线程、协程有什么区别？&lt;/li&gt;
+&lt;li&gt;线程共享哪些进程资源，有哪些独立资源？&lt;/li&gt;
+&lt;li&gt;都说进程线程切换开销大，到底大在哪？&lt;/li&gt;
+&lt;li&gt;线程池是什么？它有什么作用？&lt;/li&gt;
+&lt;li&gt;你知道有哪些多进程和多线程的使用场景？&lt;/li&gt;
+&lt;li&gt;进程和进程之间，线程和线程之间怎么通信？&lt;/li&gt;
+&lt;li&gt;Python和Golang的协程有什么区别？&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;搞完概念之后可以来试试code，这里有两道leetcode的线程题:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;https://leetcode-cn.com/problems/print-in-order/&#34;&gt;按序打印&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://leetcode-cn.com/problems/print-foobar-alternately/&#34;&gt;交替打印FooBar&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -6,10 +6,19 @@
     <description>Recent content in Posts on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 14 Nov 2020 19:54:13 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 15 Nov 2020 15:38:25 +0800</lastBuildDate>
     
 	<atom:link href="https://hj24.life/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>一次P0事故引起的业务思考</title>
+      <link>https://hj24.life/posts/%E4%B8%80%E6%AC%A1p0%E4%BA%8B%E6%95%85%E5%BC%95%E8%B5%B7%E7%9A%84%E4%B8%9A%E5%8A%A1%E6%80%9D%E8%80%83/</link>
+      <pubDate>Sun, 15 Nov 2020 15:38:25 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E4%B8%80%E6%AC%A1p0%E4%BA%8B%E6%95%85%E5%BC%95%E8%B5%B7%E7%9A%84%E4%B8%9A%E5%8A%A1%E6%80%9D%E8%80%83/</guid>
+      <description>&lt;p&gt;背景是前几天的一次 P0 事故，我们当做数据库用的 redis 满了，触发了配置的 LRU 逐出策略，逐出了 20min 的 key，导致大概有 2w 用户当天的学习数据丢失，在处理过程中有很多值得总结的点，于是写下这篇博客。&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>Hugo使用指北</title>
@@ -19,6 +28,19 @@
       <guid>https://hj24.life/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/</guid>
       <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
 从 hexo 迁移到了 hugo，从安装到部署，记录一下使用流程。</description>
+    </item>
+    
+    <item>
+      <title>从源码看flask是如何保证线程安全的</title>
+      <link>https://hj24.life/posts/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8Bflask%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84/</link>
+      <pubDate>Mon, 02 Mar 2020 15:37:20 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8Bflask%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+之前粗略的看过flask的文档，知道了它是线程安全的，大概是通过维护了一个以线程ID (在 Greenlet 可用的情况下优先使用 Greenlet 的 ID，因此协程也是一样的)为键的字典，里面放了分配给这个线程的资源来做到线程隔离，以此实现线程安全的目的。
+&lt;p&gt;写这篇博客是因为之前有个同事问我他写了个全局变量，在flask里是线程安全的吗？
+当时没过脑子，直接回答了是，现在想想&amp;hellip;应该是把他坑了&lt;/p&gt;
+&lt;p&gt;为了彻底弄明白这个问题，我搜了很多知乎，stackoverflow，reddit的问答，还有一些博客，也看了一遍相关的源码，最后写下这篇博客，做个记录。&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -38,6 +60,62 @@
     </item>
     
     <item>
+      <title>将Python项目打包成Docker镜像</title>
+      <link>https://hj24.life/posts/%E5%B0%86python%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E6%88%90docker%E9%95%9C%E5%83%8F/</link>
+      <pubDate>Fri, 31 Jan 2020 15:36:42 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E5%B0%86python%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E6%88%90docker%E9%95%9C%E5%83%8F/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+之前写了一篇 Dockerfile编写指南，不过没有涉及到部署项目这种相对复杂的操作，最近写毕设需要把项目打包成docker镜像，部署在服务器上，因此写下这篇博客，对上面那篇做一个补充引申。
+&lt;p&gt;一个将Python项目打包成docker镜像的基本流程如下:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;编写好Dockerfile上传至Github/Gitlab -&amp;gt; git拉取代码到服务器 -&amp;gt; build镜像
+-&amp;gt; docker run配置端口映射 -&amp;gt; 设置服务器安全组&lt;/p&gt;
+&lt;/blockquote&gt;</description>
+    </item>
+    
+    <item>
+      <title>Dockerfile编写指北</title>
+      <link>https://hj24.life/posts/dockerfile%E7%BC%96%E5%86%99%E6%8C%87%E5%8C%97/</link>
+      <pubDate>Thu, 30 Jan 2020 15:34:40 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/dockerfile%E7%BC%96%E5%86%99%E6%8C%87%E5%8C%97/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+刚开始接触docker时大家基本都是通过`docker pull`命令来拉取镜像，在此基础上`docker exec/run`这些命令，进入容器做一些配置上的修改以此来构建一个容器，而Dockerfile就是一个一劳永益的构建镜像的方法，通过编写Dockerfile来定制自己的镜像。
+&lt;p&gt;说白了，就是类似于Python项目的requirements.txt文件，你可以在里面写上自己需要的依赖包，然后安装构建自己项目的依赖:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;requirements.txt =&amp;gt; Dockerfile
+pip install =&amp;gt; docker build&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;这篇博客会以构建一个简单的Postgres镜像为例，讲一讲用Dockerfile来定制自己的镜像的过程。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>进程线程和协程浅析</title>
+      <link>https://hj24.life/posts/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E5%92%8C%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/</link>
+      <pubDate>Wed, 29 Jan 2020 15:36:16 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E5%92%8C%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+不管考研还是工作，进程线程总是一个避免不了的问题，除此之外，协程也是高并发编程必备的技能
+&lt;p&gt;这篇博客照旧还是以问题为导向，如果看完能回答出下面这些问题，那么应该就初步掌握了这些点，剩下的部分就需要你不断code，不断深挖技术书籍，在实践中提升自己的理解:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;进程、线程、协程有什么区别？&lt;/li&gt;
+&lt;li&gt;线程共享哪些进程资源，有哪些独立资源？&lt;/li&gt;
+&lt;li&gt;都说进程线程切换开销大，到底大在哪？&lt;/li&gt;
+&lt;li&gt;线程池是什么？它有什么作用？&lt;/li&gt;
+&lt;li&gt;你知道有哪些多进程和多线程的使用场景？&lt;/li&gt;
+&lt;li&gt;进程和进程之间，线程和线程之间怎么通信？&lt;/li&gt;
+&lt;li&gt;Python和Golang的协程有什么区别？&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;搞完概念之后可以来试试code，这里有两道leetcode的线程题:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&#34;https://leetcode-cn.com/problems/print-in-order/&#34;&gt;按序打印&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://leetcode-cn.com/problems/print-foobar-alternately/&#34;&gt;交替打印FooBar&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;</description>
+    </item>
+    
+    <item>
       <title>Things I Don T Know as of 2019</title>
       <link>https://hj24.life/posts/things-i-don-t-know-as-of-2019/</link>
       <pubDate>Tue, 14 Jan 2020 17:39:47 +0800</pubDate>
@@ -48,6 +126,26 @@
 &lt;a href=&#34;https://blog.lovezhy.cc/2019/01/01/Things%20I%20Don%E2%80%99t%20Know%20as%20of%202018/&#34;&gt;lovezhy Things I Don&amp;rsquo;t Know as of 2018&lt;/a&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;春节假期快要结束了，没几天要回去上班，准备春招，因此写下这篇博客，记录过去一年的那些我还不了解的技术，那些我感兴趣但还来得及学的技术。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>如何发布自己的Python库</title>
+      <link>https://hj24.life/posts/%E5%A6%82%E4%BD%95%E5%8F%91%E5%B8%83%E8%87%AA%E5%B7%B1%E7%9A%84python%E5%BA%93/</link>
+      <pubDate>Thu, 15 Aug 2019 15:35:36 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E5%A6%82%E4%BD%95%E5%8F%91%E5%B8%83%E8%87%AA%E5%B7%B1%E7%9A%84python%E5%BA%93/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+&lt;h2 id=&#34;前言与简介&#34;&gt;前言与简介&lt;/h2&gt;
+&lt;p&gt;我想任何一个有追求的Python开发者在度过基础阶段后都想过发布自己的库，也就是我们常说的造轮子，这是成为一个成熟Python开发者的第一步，在造轮子的过程中，无论是自己的编程能力还是为以后给开源项目贡献代码的能力都会得到很大提升。今天这篇博客，就来带大家从0开始，向PyPI贡献自己的开源库。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>解决mac系统下python画图时中文乱码的问题</title>
+      <link>https://hj24.life/posts/%E8%A7%A3%E5%86%B3mac%E7%B3%BB%E7%BB%9F%E4%B8%8Bpython%E7%94%BB%E5%9B%BE%E6%97%B6%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81%E7%9A%84%E9%97%AE%E9%A2%98/</link>
+      <pubDate>Wed, 05 Jun 2019 15:34:00 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E8%A7%A3%E5%86%B3mac%E7%B3%BB%E7%BB%9F%E4%B8%8Bpython%E7%94%BB%E5%9B%BE%E6%97%B6%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81%E7%9A%84%E9%97%AE%E9%A2%98/</guid>
+      <description>&lt;p&gt;在mac上用python的matplotlib库画图的人大概都遇到过中文显示乱码的问题，网上大多博客都是采用下载新的字体库解决的，不过这里提供一种更简单，不费事的方法。&lt;/p&gt;</description>
     </item>
     
     <item>

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="hj24" />
+	
+	
+	
+	<title>从源码看flask是如何保证线程安全的 ｜ 客舟听雨</title>
+	
+    
+    
+    <meta name="description" content="之前粗略的看过flask的文档，知道了它是线程安全的，大概是通过维护了一个以线程ID (在 Greenlet 可用的情况下优先使用 Greenlet 的 ID，因此协程也是一样的)为键的字典，里面放了分配给这个线程的资源来做到线程隔离，以此实现线程安全的目的。 写这篇博客是因为之前有个同事问我他写了个全局变量，在flask里是线程安全的吗？ 当时没过脑子，直接回答了是，现在想想&amp;hellip;应该是把他坑了
+为了彻底弄明白这个问题，我搜了很多知乎，stackoverflow，reddit的问答，还有一些博客，也看了一遍相关的源码，最后写下这篇博客，做个记录。
+" />
+    
+
+    
+    
+    <meta name="keywords" content="Hugo, theme, zozo" />
+    
+
+	
+    
+    <link rel="shortcut icon" href="https://hj24.life/images/favicon.ico" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.lifecss/normalize.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/zozo.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/highlight.css" />
+
+    
+    
+</head>
+
+<body>
+    <div class="main animate__animated animate__fadeInDown">
+        <div class="nav_container animated fadeInDown">
+    <div class="site_nav" id="site_nav">
+        <ul>
+            
+            <li>
+                <a href="/">首页</a>
+            </li>
+            
+            <li>
+                <a href="/posts/">归档</a>
+            </li>
+            
+            <li>
+                <a href="/tags/">标签</a>
+            </li>
+            
+            <li>
+                <a href="/fav/">好站</a>
+            </li>
+            
+            <li>
+                <a href="/snippets/">代码片</a>
+            </li>
+            
+            <li>
+                <a href="/about/">关于</a>
+            </li>
+            
+        </ul>
+    </div>
+    <div class="menu_icon">
+        <a id="menu_icon"><i class="ri-menu-line"></i></a>
+    </div>
+</div>
+        <div class="header animated fadeInDown">
+    <div class="site_title_container">
+        <div class="site_title">
+            <h1>
+                <a href="https://hj24.life">
+                    <span>客舟听雨</span>
+                </a>
+            </h1>
+        </div>
+        <div class="description">
+            <p class="sub_title">hj24.life</p>
+            <div class="my_socials">
+                
+                
+                <a href="https://github.com/hj24" title="github" target="_blank"><i class="ri-github-fill"></i></a>
+                
+                
+                
+                <a href="https://www.zhihu.com/people/da-li-ju-13" title="zhihu" target="_blank"><i class="ri-zhihu-fill"></i></a>
+                
+                
+                <a href="https://hj24.life/index.xml" type="application/rss+xml" title="rss" target="_blank"><i
+                        class="ri-rss-fill"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="content">
+            <div class="post_page">
+                <div class="post animate__animated animate__fadeInDown">
+                    <div class="post_title post_detail_title">
+                        <h2><a href='/posts/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8Bflask%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84/'>从源码看flask是如何保证线程安全的</a></h2>
+                        <span class="date">2020.03.02</span>
+                    </div>
+                    <div class="post_content markdown"><meta name="referrer" content="no-referrer" />
+之前粗略的看过flask的文档，知道了它是线程安全的，大概是通过维护了一个以线程ID (在 Greenlet 可用的情况下优先使用 Greenlet 的 ID，因此协程也是一样的)为键的字典，里面放了分配给这个线程的资源来做到线程隔离，以此实现线程安全的目的。
+<p>写这篇博客是因为之前有个同事问我他写了个全局变量，在flask里是线程安全的吗？
+当时没过脑子，直接回答了是，现在想想&hellip;应该是把他坑了</p>
+<p>为了彻底弄明白这个问题，我搜了很多知乎，stackoverflow，reddit的问答，还有一些博客，也看了一遍相关的源码，最后写下这篇博客，做个记录。</p>
+<h2 id="appcontext和requestcontext是什么">AppContext和RequestContext是什么</h2>
+<p>先说几句概念性的东西，flask的线程安全是基于<code>Local</code>、<code>LocalStack</code>和<code>LocalProxy</code>来做的，这三个对象体现在源码中的<code>AppContext</code> 和<code>RequestContext</code>中（<a href="https://github.com/pallets/flask/blob/master/src/flask/ctx.py">源码在这里</a>)</p>
+<p>一开始我对flask线程安全的理解是只局限于知道它通过维护了一个以线程ID为键的字典，里面放了分配给这个线程的资源来做到线程隔离这样，AppContext和RequestContext是啥我是完全不知道的。
+看了一下源码（在ctx.py内），发现是flask app和request请求的上下文管理器:</p>
+<blockquote>
+<p>App Context 是代表应用上下文，可能包含各种配置信息，比如日志配置，数据库配置等
+Request Context 代表一个请求上下文，我们可以获取到当前请求中的各种信息。比如 body 携带的信息</p>
+</blockquote>
+<p>来看一下<code>AppContext</code>的上下文管理器协议里写了些什么:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+    <span class="k">return</span> <span class="bp">self</span>
+
+<span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">exc_value</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">BROKEN_PYPY_CTXMGR_EXIT</span> <span class="ow">and</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">reraise</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span>
+</code></pre></div><p>在进入上下文时，会有一个栈的push操作，里面是这样定义的:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_refcnt</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="s2">&#34;exc_clear&#34;</span><span class="p">):</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exc_clear</span><span class="p">()</span>
+    <span class="n">_app_ctx_stack</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="n">appcontext_pushed</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">)</span>
+</code></pre></div><p>最终它会被压到<code>_app_ctx_stack</code>这个栈中，同样的，对于Request上下文，它会被压到<code>_request_ctx_stack</code>这个栈中，不过它还多一步：</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">top</span> <span class="o">=</span> <span class="n">_request_ctx_stack</span><span class="o">.</span><span class="n">top</span>
+    <span class="k">if</span> <span class="n">top</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">top</span><span class="o">.</span><span class="n">preserved</span><span class="p">:</span>
+        <span class="n">top</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">top</span><span class="o">.</span><span class="n">_preserved_exc</span><span class="p">)</span>
+
+    <span class="c1"># Before we push the request context we have to ensure that there</span>
+    <span class="c1"># is an application context.</span>
+    <span class="n">app_ctx</span> <span class="o">=</span> <span class="n">_app_ctx_stack</span><span class="o">.</span><span class="n">top</span>
+    <span class="k">if</span> <span class="n">app_ctx</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">app_ctx</span><span class="o">.</span><span class="n">app</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span>
+        <span class="n">app_ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">app_context</span><span class="p">()</span>
+        <span class="n">app_ctx</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_app_ctx_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app_ctx</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_app_ctx_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="s2">&#34;exc_clear&#34;</span><span class="p">):</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exc_clear</span><span class="p">()</span>
+
+    <span class="n">_request_ctx_stack</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="o">...</span>
+</code></pre></div><p>就是注释没被删掉的那部分，在进入request的上下文之前，需要确保已经有app上下文了，因为Flask实例化创建app时并没有进入AppContext
+对于这一点，我的理解是，如果当前app没有入栈的话，存在多个app实例时，通过current_app是获取不到当前app上下文的信息的</p>
+<p>那这两栈究竟是啥呢？
+我去看了看他们被定义的文件（globals.py文件）:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">...</span>
+
+<span class="kn">from</span> <span class="nn">werkzeug.local</span> <span class="kn">import</span> <span class="n">LocalProxy</span>
+<span class="kn">from</span> <span class="nn">werkzeug.local</span> <span class="kn">import</span> <span class="n">LocalStack</span>
+
+<span class="o">...</span>
+
+<span class="c1"># context locals</span>
+<span class="n">_request_ctx_stack</span> <span class="o">=</span> <span class="n">LocalStack</span><span class="p">()</span>
+<span class="n">_app_ctx_stack</span> <span class="o">=</span> <span class="n">LocalStack</span><span class="p">()</span>
+<span class="n">current_app</span> <span class="o">=</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="n">_find_app</span><span class="p">)</span>
+<span class="n">request</span> <span class="o">=</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">_lookup_req_object</span><span class="p">,</span> <span class="s2">&#34;request&#34;</span><span class="p">))</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">_lookup_req_object</span><span class="p">,</span> <span class="s2">&#34;session&#34;</span><span class="p">))</span>
+<span class="n">g</span> <span class="o">=</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">_lookup_app_object</span><span class="p">,</span> <span class="s2">&#34;g&#34;</span><span class="p">))</span>
+</code></pre></div><p>发现使用的还是werkzeug的Local相关的那三个类，<code>_app_ctx_stack</code>和<code>_request_ctx_stack</code>其实都是<code>LocalStack</code>这个栈</p>
+<p>到这里为止，我还是很懵逼，不懂这两个上下文管理器有什么用，为什么要用到栈？</p>
+<p>于是我想去看看它们是在什么地方被调用的，我是先从request下手的，既然是请求，肯定是从wsgi过来的，于是去看了wsgi_app的源码 (在flask的app.py里):</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">wsgi_app</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_context</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_dispatch_request</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="n">e</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>  <span class="c1"># noqa: B001</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">raise</span>
+        <span class="k">return</span> <span class="n">response</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">should_ignore_error</span><span class="p">(</span><span class="n">error</span><span class="p">):</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">auto_pop</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</code></pre></div><p>可以看出来，请求到达，先进入request上下文，这时候会去检查是否有app上下文，没有就会先构建它。
+到这里，我只是大概理清楚了一个flask请求周期内这两个上下文的运作流程，我找了一张流程图，可以看一下:
+<img src="https://tva1.sinaimg.cn/large/00831rSTgy1gcfz969o4tj30k004b3yi.jpg" alt=""></p>
+<p>到这里，我又多了个疑问，既然request上下文构建时要顺便构建app上下文，为什么要区分它们两个？</p>
+<p>这几个问题其实我看源码琢磨的不是很透彻，不过我在搜知乎时倒是看到一个答案，有种豁然开朗的感觉:</p>
+<ol>
+<li>关于为什么用栈结构
+其实这个问题转换一下就是，什么情况下多个flask app会共存在同一个线程内？不然单一app也没必要用栈啊
+这里引用大佬的回答:</li>
+</ol>
+<blockquote>
+<p>一个 Flask App 实例就是一个 WSGI Application，那么 WSGI Middleware 是允许使用组合模式的
+Werkzeug 内置的 Middleware 将两个 Flask App 组合成一个一个 WSGI Application。这种情况下两个 App 都同时在运行，只是根据 URL 的不同而将请求分发到不同的 App 上处理</p>
+</blockquote>
+<p>其实一开始我理解错了，以为是gunicorn那种多个worker进程拉起多个flask app的形式，后来想想这都多线程了，肯定是隔离的啊，于是我去看了werkzeug的源码，在<code>werkzeug/middleware/dispatcher.py</code>里找到了答案：</p>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">This middleware creates a single WSGI application that dispatches to
+multiple other WSGI applications mounted at different URL paths.
+</code></pre></div><p>这段注释里写的很清楚，这个中间件是用来创建一个单独的wsgi应用，来分发不同的请求到多个其它的wsgi应用上去的。
+这里我有疑问，因为从来没这么用过，这种需求不都是独立部署多个服务，走微服务那一套，或者直接用REST去请求不同应用的吗，结果继续往下看，注释里又给我解释了</p>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">In production, you might instead handle this at the HTTP server level,
+serving files or proxying to application servers based on location. The
+API and admin apps would each be deployed with a separate WSGI server,
+and the static files would be served directly by the HTTP server.
+</code></pre></div><p>很明显，作者也建议在生产环境上用我上面说的那些解决方案，这应该只是在开发中可能会使用的
+用法也很简单，通过这样的形式在单一线程中开启多个app:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="n">app</span> <span class="o">=</span> <span class="n">DispatcherMiddleware</span><span class="p">(</span><span class="n">serve_frontend</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s1">&#39;/api&#39;</span><span class="p">:</span> <span class="n">api_app</span><span class="p">,</span>
+        <span class="s1">&#39;/admin&#39;</span><span class="p">:</span> <span class="n">admin_app</span><span class="p">})</span>
+</code></pre></div><ol start="2">
+<li>为什么要区分App和Request上下文？
+继续引用大佬的回答:</li>
+</ol>
+<blockquote>
+<p>这个做法给予在非 Web Runtime的概念 中灵活控制 Context 的可能性
+Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p>
+</blockquote>
+<p>说来惭愧，看完之后才意识到flask也有非web场景下的使用情况，想象一下，在非web runtime的情况下，如果这没有单独的app context，当前有多个app实例的时候怎么做到各个app的资源都是独立的呢？</p>
+<p>来看这个例子：</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">data.user_model</span> <span class="kn">import</span> <span class="n">User</span><span class="p">,</span> <span class="n">db</span>
+
+<span class="n">database</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">database</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;SQLALCHEMY_DATABASE_URI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sqlite:////tmp/test.db&#39;</span>
+
+<span class="n">db</span><span class="o">.</span><span class="n">init_app</span><span class="p">(</span><span class="n">database</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">create_all</span><span class="p">()</span>
+<span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;admin&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;admin@example.com&#39;</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+
+<span class="n">database1</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">database1</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;SQLALCHEMY_DATABASE_URI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sqlite:////tmp/test1.db&#39;</span>
+
+
+<span class="n">db</span><span class="o">.</span><span class="n">init_app</span><span class="p">(</span><span class="n">database1</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">create_all</span><span class="p">()</span>
+<span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;admin_test&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;admin@example.com&#39;</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<span class="k">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+</code></pre></div><p>显然这是个没有使用app context的场景，我们的本意是给两个共存的flask app实例各自绑定一个数据库
+但是它并没有做到资源隔离，db在解释执行到database1之前代表的是database的数据库，之后又和datbase1绑定在一起，没有context来隔离，怎么在不同的场景下使用不同的db？</p>
+<p>那么，修改一下：</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">data.user_model</span> <span class="kn">import</span> <span class="n">User</span><span class="p">,</span> <span class="n">db</span>
+
+<span class="n">database</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">database</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;SQLALCHEMY_DATABASE_URI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sqlite:////tmp/test.db&#39;</span>
+
+<span class="k">with</span> <span class="n">database</span><span class="o">.</span><span class="n">app_context</span><span class="p">():</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">init_app</span><span class="p">(</span><span class="n">current_app</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">create_all</span><span class="p">()</span>
+    <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;admin&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;admin@example.com&#39;</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+
+<span class="n">database1</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">database1</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;SQLALCHEMY_DATABASE_URI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sqlite:////tmp/test1.db&#39;</span>
+
+<span class="k">with</span> <span class="n">database1</span><span class="o">.</span><span class="n">app_context</span><span class="p">():</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">init_app</span><span class="p">(</span><span class="n">current_app</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">create_all</span><span class="p">()</span>
+    <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;admin_test&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;admin@example.com&#39;</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+</code></pre></div><p>有了app上下文就好办了，可以通过<code>current_app</code>来获取当前的app，来初始化不同的db，上面这两个db都处于不同的上下文之中，因此都是隔离的</p>
+<p>到这里，问题就迎刃而解了，为了防止没说清楚，再给个例子:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">current_app</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="s2">&#34;app1&#34;</span><span class="p">)</span>
+<span class="n">app2</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="s2">&#34;app2&#34;</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&#34;app1.logger&#34;</span><span class="p">)</span>
+<span class="n">app2</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&#34;app2.logger&#34;</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="s2">&#34;app_log.txt&#34;</span><span class="p">))</span>
+<span class="n">app2</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="s2">&#34;app2_log.txt&#34;</span><span class="p">))</span>
+
+<span class="c1"># 没有request上下文的时候，我要使用app的logger记录一下日志，这时候就需要app上下文了</span>
+<span class="k">with</span> <span class="n">app</span><span class="o">.</span><span class="n">app_context</span><span class="p">():</span>
+    <span class="k">with</span> <span class="n">app2</span><span class="o">.</span><span class="n">app_context</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+        	<span class="c1"># 这里故意抛出一个异常，实际情况下可能是真实系统中的异常</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&#34;app2 error&#34;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">current_app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&#34;app1 error&#34;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">current_app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</code></pre></div><p>这个例子也能说明为什么要用栈结构，两个app叠加使用时，不用栈，取出来的就不是对于的app了，比如这里的例子，如果使用先进先出的队列，app2压栈后取出来的是app1的上下文，那不全乱套了。</p>
+<p>有人可能有疑问，这两app分别调用了自己的<code>app_context()</code>方法，那不是只会压到他们自己的栈里吗，不用栈不也一样的。
+好问题，我之前疑问过，不过回去一看就明白了，app栈和request栈是这么定义的:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="c1"># context locals</span>
+<span class="n">_request_ctx_stack</span> <span class="o">=</span> <span class="n">LocalStack</span><span class="p">()</span>
+<span class="n">_app_ctx_stack</span> <span class="o">=</span> <span class="n">LocalStack</span><span class="p">()</span>
+</code></pre></div><p>是已经实例化之后的对象，在别的模块被导入时其实是利用python的模块机制做了个单例模式，所以两个app都会被压到同一个栈中。不得不感叹flask设计的精巧啊</p>
+<p>到这里，我算是大概理解了AppContext和RequestContext为什么要独立存在的原因了，并且我也大概了解他们的作用：通过底层的<code>LocalStack()</code>来做到当请求过来时根据线程号来取出当前关联的request和app，使用这些资源完成业务逻辑</p>
+<p>关于后者，我还想再进一步了解他们是怎么实现的通过当前线程ID取到对应的资源，也就是具体是如何线程隔离的，于是我哼哧哼哧的去看了<code>Local</code>、<code>LocalStack</code>和<code>LocalProxy</code>的源码（在werkzeug的local.py文件内）</p>
+<h2 id="local和localstack">Local和LocalStack</h2>
+<p>先来看Local，我在看它的源码之前是抱着这几个疑问的：</p>
+<ol>
+<li>它是怎么实现才能做到线程隔离的</li>
+<li>它和LocalStack有什么关系</li>
+</ol>
+<p>Local的源码不长:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">greenlet</span> <span class="kn">import</span> <span class="n">getcurrent</span> <span class="k">as</span> <span class="n">get_ident</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">thread</span> <span class="kn">import</span> <span class="n">get_ident</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">_thread</span> <span class="kn">import</span> <span class="n">get_ident</span>
+
+<span class="k">class</span> <span class="nc">Local</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&#34;__storage__&#34;</span><span class="p">,</span> <span class="s2">&#34;__ident_func__&#34;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&#34;__storage__&#34;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&#34;__ident_func__&#34;</span><span class="p">,</span> <span class="n">get_ident</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__storage__</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proxy</span><span class="p">):</span>
+        <span class="s2">&#34;&#34;&#34;Create a proxy for a name.&#34;&#34;&#34;</span>
+        <span class="k">return</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__release_local__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__storage__</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ident_func__</span><span class="p">(),</span> <span class="bp">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__ident_func__</span><span class="p">()][</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">ident</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__ident_func__</span><span class="p">()</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage__</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">storage</span><span class="p">[</span><span class="n">ident</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">storage</span><span class="p">[</span><span class="n">ident</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">value</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__delattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__ident_func__</span><span class="p">()][</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div><p>开始导入了一个<code>get_ident</code>方法，主要就是用来获取当前线程ID，greenlet可用时优先导入它的<code>get_ident</code>方法，初始化local时创建了一个名为<code>__storage__</code>的字典，这就是用来根据线程ID存储它的资源的字典，从这段代码就可以看出来:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__storage__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">__ident_func__</span><span class="p">()][</span><span class="n">name</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</code></pre></div><ol>
+<li>通过重写getattr来在<code>__storage__</code>字典里根据<code>self.__ident_func__()</code></li>
+<li>获得的线程ID作为键值来获取当前线程对象内的name资源，这里的&rdquo;<strong>ident_func</strong>&ldquo;就是<code>get_ident</code></li>
+<li>要是释放资源时，调用<code>__release_local__</code>来根据线程ID把它从字典里pop掉</li>
+</ol>
+<h2 id="localstack">LocalStack</h2>
+<p>来看LocalStack的源码</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">class</span> <span class="nc">LocalStack</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_local</span> <span class="o">=</span> <span class="n">Local</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__release_local__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">__release_local__</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__ident_func__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">__ident_func__</span>
+
+    <span class="nd">@__ident_func__.setter</span>
+    <span class="k">def</span> <span class="nf">__ident_func__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;__ident_func__&#34;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_lookup</span><span class="p">():</span>
+            <span class="n">rv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">top</span>
+            <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&#34;object unbound&#34;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">rv</span>
+
+        <span class="k">return</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="n">_lookup</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="s2">&#34;&#34;&#34;Pushes a new item to the stack&#34;&#34;&#34;</span>
+        <span class="n">rv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="n">rv</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">rv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rv</span>
+
+    <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&#34;&#34;&#34;Removes the topmost item from the stack, will return the
+</span><span class="s2">        old value or `None` if the stack was already empty.
+</span><span class="s2">        &#34;&#34;&#34;</span>
+        <span class="n">stack</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stack</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">release_local</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">top</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&#34;&#34;&#34;The topmost item on the stack.  If the stack is empty,
+</span><span class="s2">        `None` is returned.
+</span><span class="s2">        &#34;&#34;&#34;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">None</span>
+</code></pre></div><p>其实是对Local的封装，初始化的时候就是一个Local对象，给它加上了栈的结构：</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+    <span class="n">rv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="n">rv</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">rv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rv</span>
+
+<span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">stack</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">release_local</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+</code></pre></div><p>具体就是在执行push、pop操作的时候先去看<code>self._local</code>有没有stack属性，有点话执行push pop，没有的话给它绑定上一个栈
+根据栈后进先出的特点，获取的栈顶元素一定是目前最新的正在使用的</p>
+<h2 id="localproxy">LocalProxy</h2>
+<p>之前提到了Local和LocalStack，知道了它们是怎么实现的了，其实实现线程隔离，我的感觉是上面这两个就够了，为什么还要LocalProxy呢？</p>
+<p>不过在这之前，我有个大概的猜想，从名字可以看出来这是一个代理，具体可以去看《设计模式》里的代理模式，它的作用应该就是给Local和LocalStack做代理，在它们的基础上可以做一些功能的封装之类的操作，让写法更简洁吧</p>
+<p>为了解决这个疑问，来看LocalProxy的源码：</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="nd">@implements_bool</span>
+<span class="k">class</span> <span class="nc">LocalProxy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&#34;__local&#34;</span><span class="p">,</span> <span class="s2">&#34;__dict__&#34;</span><span class="p">,</span> <span class="s2">&#34;__name__&#34;</span><span class="p">,</span> <span class="s2">&#34;__wrapped__&#34;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&#34;_LocalProxy__local&#34;</span><span class="p">,</span> <span class="n">local</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&#34;__name__&#34;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">local</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">local</span><span class="p">,</span> <span class="s2">&#34;__release_local__&#34;</span><span class="p">):</span>
+            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&#34;__wrapped__&#34;</span><span class="p">,</span> <span class="n">local</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_current_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__local</span><span class="p">,</span> <span class="s2">&#34;__release_local__&#34;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__local</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__local</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&#34;no object bound to </span><span class="si">%s</span><span class="s2">&#34;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__dict__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()</span><span class="o">.</span><span class="vm">__dict__</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&#34;__dict__&#34;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&#34;&lt;</span><span class="si">%s</span><span class="s2"> unbound&gt;&#34;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="fm">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">unicode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">())</span>  <span class="c1"># noqa</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&#34;__members__&#34;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">())</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">(),</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">PY2</span><span class="p">:</span>
+        <span class="fm">__getslice__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="fm">__setslice__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">seq</span>
+
+        <span class="k">def</span> <span class="fm">__delslice__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span>
+
+</code></pre></div><p>它的作用就是代理Local和LocalStack对象，举个例子，来看之前的源码:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">_lookup_req_object</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="n">top</span> <span class="o">=</span> <span class="n">_request_ctx_stack</span><span class="o">.</span><span class="n">top</span>
+    <span class="k">if</span> <span class="n">top</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">_request_ctx_err_msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+<span class="n">_request_ctx_stack</span> <span class="o">=</span> <span class="n">LocalStack</span><span class="p">()</span>
+
+<span class="n">request</span> <span class="o">=</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">_lookup_req_object</span><span class="p">,</span> <span class="s2">&#34;request&#34;</span><span class="p">))</span>
+</code></pre></div><p>这是flask的request对象定义的地方
+<code>_lookup_req_object</code>是为了从request栈里取出当前线程的request，把这个方法的name参数固定住存到LocalProxy里面的local属性里：</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&#34;_LocalProxy__local&#34;</span><span class="p">,</span> <span class="n">local</span><span class="p">)</span>
+</code></pre></div><p>然后就可以使用<code>self._loacl()</code>来获取当前代理的对象了，在代理里面是通过<code>_get_current_object</code>来获取的:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">_get_current_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__local</span><span class="p">,</span> <span class="s2">&#34;__release_local__&#34;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__local</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__local</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&#34;no object bound to </span><span class="si">%s</span><span class="s2">&#34;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+</code></pre></div><p>然后，每一次获取当前线程的request对象，都会使用<code>self._local()</code>调用<code>_lookup_req_object</code>去request栈里获取当前request上下文出来</p>
+<p>如果没有这个代理，来看这个例子 (偷懒直接拿了大佬回答里的例子，反正自己写出来的也差不多):</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">werkzeug.local</span> <span class="kn">import</span> <span class="n">LocalStack</span>
+<span class="n">test_stack</span> <span class="o">=</span> <span class="n">LocalStack</span><span class="p">()</span>
+<span class="n">test_stack</span><span class="o">.</span><span class="n">push</span><span class="p">({</span><span class="s1">&#39;abc&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">})</span>
+<span class="n">test_stack</span><span class="o">.</span><span class="n">push</span><span class="p">({</span><span class="s1">&#39;abc&#39;</span><span class="p">:</span> <span class="s1">&#39;1234&#39;</span><span class="p">})</span>
+
+<span class="k">def</span> <span class="nf">get_item</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">test_stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+<span class="n">item</span> <span class="o">=</span> <span class="n">get_item</span><span class="p">()</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
+<span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
+</code></pre></div><p>打印结果是：</p>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">123
+123
+</code></pre></div><p>每次的输出都是一样的，都是上次栈顶弹出来的值，想要新的栈顶元素，每次都要重新执行get_item
+有了代理之后，把这个例子修改一下</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">werkzeug.local</span> <span class="kn">import</span> <span class="n">LocalStack</span><span class="p">,</span> <span class="n">LocalProxy</span>
+<span class="n">test_stack</span> <span class="o">=</span> <span class="n">LocalStack</span><span class="p">()</span>
+<span class="n">test_stack</span><span class="o">.</span><span class="n">push</span><span class="p">({</span><span class="s1">&#39;abc&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">})</span>
+<span class="n">test_stack</span><span class="o">.</span><span class="n">push</span><span class="p">({</span><span class="s1">&#39;abc&#39;</span><span class="p">:</span> <span class="s1">&#39;1234&#39;</span><span class="p">})</span>
+
+<span class="k">def</span> <span class="nf">get_item</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">test_stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+<span class="n">item</span> <span class="o">=</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="n">get_item</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
+<span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
+</code></pre></div><p>打印结果是：</p>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">123
+1234
+</code></pre></div><p>通过把get_item方法传进去，使用item是每次都会把去栈里去最新数据的操作交给代理去完成，这就是Proxy的用处，试试也验证了我之前的猜想</p>
+<p>关于源码的部分就是这么多了</p>
+<h2 id="总结">总结</h2>
+<p>回过头来看文章开头的问题，全局变量在flask里真的是线程安全的嘛？</p>
+<ul>
+<li>绝对不是</li>
+</ul>
+<p>即使你不相信我，也请你相信davidism，他是flask的核心开发者，并且在stackoverflow的一个相关<a href="https://stackoverflow.com/questions/32815451/are-global-variables-thread-safe-in-flask-how-do-i-share-data-between-requests">回答</a>里明确表达了：</p>
+<blockquote>
+<p>You can&rsquo;t use global variables to hold this sort of data. Not only is it not thread
+safe, it&rsquo;s not process safe, and WSGI servers in production spawn multiple
+processes. Not only would your counts be wrong if you were using threads to handle
+requests, they would also vary depending on which process handled the request.
+Use a data source outside of Flask to hold global data. A database, memcached, or
+redis are all appropriate separate storage areas, depending on your needs. If you
+need to load and access Python data, consider multiprocessing.Manager. You could
+also use the session for simple data that is per-user.</p>
+</blockquote>
+<p>flask的线程安全，是基于Local，LocalStack的线程隔离机制来做的，他们通过线程ID来隔离每个线程的独自的资源，既然每个线程都是隔离的，那肯定也是线程安全的了
+如果你想用全局变量，最好加锁来操作吧，或者把它写进数据库里，redis里，具体怎么做需要你看自己的需求决定了。</p>
+<h2 id="参考">参考</h2>
+<ol>
+<li><a href="https://zhuanlan.zhihu.com/p/33847569">知乎 - flask中的context初探</a></li>
+<li><a href="https://stackoverflow.com/questions/32815451/are-global-variables-thread-safe-in-flask-how-do-i-share-data-between-requests">stackoverflow - Are global variables thread safe in flask? How do I share data between requests?</a></li>
+<li><a href="https://stackoverflow.com/questions/23726788/how-does-flask-keep-the-request-global-threadsafe">stackoverflow - How does Flask keep the request global threadsafe</a></li>
+<li><a href="https://stackoverflow.com/questions/23457658/flask-global-variables">stackoverflow - Flask global variables</a></li>
+<li><a href="https://www.reddit.com/r/flask/comments/90gjsj/when_people_say_flask_isnt_thread_safe_what_does/">reddit (需科学上网) - When people say flask isnt thread safe what does that mean?</a></li>
+<li><a href="https://www.reddit.com/r/learnpython/comments/3mnw8w/are_global_variables_thread_safe_in_flask/">reddit - Are global variables thread safe in flask?</a></li>
+<li><a href="https://flask.palletsprojects.com/en/1.1.x/design/">Design Decisions in Flask 中的 Thread Locals 一节</a></li>
+<li><a href="https://github.com/pallets/flask/blob/master/src/flask/globals.py">flask globals源码</a></li>
+<li><a href="https://github.com/pallets/flask/blob/master/src/flask/ctx.py">flask ctx源码</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/33732859">知乎 - Werkzeug(Flask)之Local、LocalStack和LocalProxy</a></li>
+<li><a href="https://github.com/pallets/werkzeug/blob/master/src/werkzeug/local.py">werkzeug local源码</a></li>
+</ol></div>
+                    <div class="post_footer">
+                        
+                        <div class="meta">
+                            <div class="info">
+                                <span class="field tags">
+                                    <i class="ri-stack-line"></i>
+                                    
+                                    <a href="https://hj24.life/tags/python/">Python</a>
+                                    
+                                </span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                
+                
+<div class="doc_comments">
+	<div id="gitalk-container"></div>
+</div>
+<link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<script type="text/javascript">
+let gitalk = new Gitalk({
+  clientID: '946e62e1049edfb63fd7',
+  clientSecret: 'ea3d0fcb9025fb88bd8dd50742bcf43dacd6af34',
+  repo: 'hj24.github.io',
+  owner: 'hj24',
+  admin: ['hj24'],
+  id: '2020-03-02 15:37:20 \x2b0800 CST',      
+  distractionFreeMode: false,  
+  title : '从源码看flask是如何保证线程安全的',
+  labels : []
+});
+gitalk.render('gitalk-container')
+</script>
+                
+            </div>
+        </div>
+    </div>
+    <a id="back_to_top" href="#" class="back_to_top"><i class="ri-arrow-up-s-line"></i></a>
+    <footer class="footer">
+    <div class="powered_by">
+        <a href="https://varkai.com">Designed by VarKai,</a>
+        <a href="http://www.gohugo.io/">Proudly published with Hugo</a>
+    </div>
+
+    <div class="footer_slogan">
+        <span>hj24&#39;s life log</span>
+    </div>
+</footer>
+    <script src="https://hj24.life/js/jquery-3.5.1.min.js"></script>
+<link href="https://hj24.life/css/fancybox.min.css" rel="stylesheet">
+<script src="https://hj24.life/js/fancybox.min.js"></script>
+<script src="https://hj24.life/js/zozo.js"></script>
+
+
+<script type="text/javascript" async
+    src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                TeX: {
+                    equationNumbers: { autoNumber: "AMS" },
+                    extensions: ["AMSmath.js", "AMSsymbols.js"]
+                }
+            }
+        });
+
+        MathJax.Hub.Queue(function () {
+            
+            
+            
+            var all = MathJax.Hub.getAllJax(), i;
+            for (i = 0; i < all.length; i += 1) {
+                all[i].SourceElement().parentNode.className += ' has-jax';
+            }
+        });
+    </script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+
+
+
+</body>
+
+</html>

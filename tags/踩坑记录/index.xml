@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>踩坑记录 on 客舟听雨</title>
+    <link>https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/</link>
+    <description>Recent content in 踩坑记录 on 客舟听雨</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Sun, 15 Nov 2020 15:38:25 +0800</lastBuildDate>
+    
+	<atom:link href="https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>一次P0事故引起的业务思考</title>
+      <link>https://hj24.life/posts/%E4%B8%80%E6%AC%A1p0%E4%BA%8B%E6%95%85%E5%BC%95%E8%B5%B7%E7%9A%84%E4%B8%9A%E5%8A%A1%E6%80%9D%E8%80%83/</link>
+      <pubDate>Sun, 15 Nov 2020 15:38:25 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E4%B8%80%E6%AC%A1p0%E4%BA%8B%E6%95%85%E5%BC%95%E8%B5%B7%E7%9A%84%E4%B8%9A%E5%8A%A1%E6%80%9D%E8%80%83/</guid>
+      <description>&lt;p&gt;背景是前几天的一次 P0 事故，我们当做数据库用的 redis 满了，触发了配置的 LRU 逐出策略，逐出了 20min 的 key，导致大概有 2w 用户当天的学习数据丢失，在处理过程中有很多值得总结的点，于是写下这篇博客。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Hugo使用指北</title>
+      <link>https://hj24.life/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/</link>
+      <pubDate>Sat, 14 Nov 2020 19:54:13 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/</guid>
+      <description>&lt;meta name=&#34;referrer&#34; content=&#34;no-referrer&#34; /&gt;
+从 hexo 迁移到了 hugo，从安装到部署，记录一下使用流程。</description>
+    </item>
+    
+    <item>
+      <title>解决mac系统下python画图时中文乱码的问题</title>
+      <link>https://hj24.life/posts/%E8%A7%A3%E5%86%B3mac%E7%B3%BB%E7%BB%9F%E4%B8%8Bpython%E7%94%BB%E5%9B%BE%E6%97%B6%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81%E7%9A%84%E9%97%AE%E9%A2%98/</link>
+      <pubDate>Wed, 05 Jun 2019 15:34:00 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E8%A7%A3%E5%86%B3mac%E7%B3%BB%E7%BB%9F%E4%B8%8Bpython%E7%94%BB%E5%9B%BE%E6%97%B6%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81%E7%9A%84%E9%97%AE%E9%A2%98/</guid>
+      <description>&lt;p&gt;在mac上用python的matplotlib库画图的人大概都遇到过中文显示乱码的问题，网上大多博客都是采用下载新的字体库解决的，不过这里提供一种更简单，不费事的方法。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>解决hexo博客不能显示图床图片问题</title>
+      <link>https://hj24.life/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/</link>
+      <pubDate>Sun, 19 May 2019 19:40:51 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/</guid>
+      <description>&lt;p&gt;刚搭建好了hexo博客，写了一篇带图的文章，结果发现图挂了…之前看博客扫到hexo博客显示本地图片可能会有问题，于是选了图床图片的方式插图，结果还是没能幸免，好在搜索了半天，解决了这个问题，这里做个记录，帮助后面遇到问题的同学。&lt;/p&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

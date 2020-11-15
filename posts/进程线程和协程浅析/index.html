@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="hj24" />
+	
+	
+	
+	<title>进程线程和协程浅析 ｜ 客舟听雨</title>
+	
+    
+    
+    <meta name="description" content="不管考研还是工作，进程线程总是一个避免不了的问题，除此之外，协程也是高并发编程必备的技能 这篇博客照旧还是以问题为导向，如果看完能回答出下面这些问题，那么应该就初步掌握了这些点，剩下的部分就需要你不断code，不断深挖技术书籍，在实践中提升自己的理解:
+ 进程、线程、协程有什么区别？ 线程共享哪些进程资源，有哪些独立资源？ 都说进程线程切换开销大，到底大在哪？ 线程池是什么？它有什么作用？ 你知道有哪些多进程和多线程的使用场景？ 进程和进程之间，线程和线程之间怎么通信？ Python和Golang的协程有什么区别？  搞完概念之后可以来试试code，这里有两道leetcode的线程题:
+ 按序打印 交替打印FooBar " />
+    
+
+    
+    
+    <meta name="keywords" content="Hugo, theme, zozo" />
+    
+
+	
+    
+    <link rel="shortcut icon" href="https://hj24.life/images/favicon.ico" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.lifecss/normalize.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/zozo.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/highlight.css" />
+
+    
+    
+</head>
+
+<body>
+    <div class="main animate__animated animate__fadeInDown">
+        <div class="nav_container animated fadeInDown">
+    <div class="site_nav" id="site_nav">
+        <ul>
+            
+            <li>
+                <a href="/">首页</a>
+            </li>
+            
+            <li>
+                <a href="/posts/">归档</a>
+            </li>
+            
+            <li>
+                <a href="/tags/">标签</a>
+            </li>
+            
+            <li>
+                <a href="/fav/">好站</a>
+            </li>
+            
+            <li>
+                <a href="/snippets/">代码片</a>
+            </li>
+            
+            <li>
+                <a href="/about/">关于</a>
+            </li>
+            
+        </ul>
+    </div>
+    <div class="menu_icon">
+        <a id="menu_icon"><i class="ri-menu-line"></i></a>
+    </div>
+</div>
+        <div class="header animated fadeInDown">
+    <div class="site_title_container">
+        <div class="site_title">
+            <h1>
+                <a href="https://hj24.life">
+                    <span>客舟听雨</span>
+                </a>
+            </h1>
+        </div>
+        <div class="description">
+            <p class="sub_title">hj24.life</p>
+            <div class="my_socials">
+                
+                
+                <a href="https://github.com/hj24" title="github" target="_blank"><i class="ri-github-fill"></i></a>
+                
+                
+                
+                <a href="https://www.zhihu.com/people/da-li-ju-13" title="zhihu" target="_blank"><i class="ri-zhihu-fill"></i></a>
+                
+                
+                <a href="https://hj24.life/index.xml" type="application/rss+xml" title="rss" target="_blank"><i
+                        class="ri-rss-fill"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="content">
+            <div class="post_page">
+                <div class="post animate__animated animate__fadeInDown">
+                    <div class="post_title post_detail_title">
+                        <h2><a href='/posts/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E5%92%8C%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/'>进程线程和协程浅析</a></h2>
+                        <span class="date">2020.01.29</span>
+                    </div>
+                    <div class="post_content markdown"><meta name="referrer" content="no-referrer" />
+不管考研还是工作，进程线程总是一个避免不了的问题，除此之外，协程也是高并发编程必备的技能
+<p>这篇博客照旧还是以问题为导向，如果看完能回答出下面这些问题，那么应该就初步掌握了这些点，剩下的部分就需要你不断code，不断深挖技术书籍，在实践中提升自己的理解:</p>
+<ol>
+<li>进程、线程、协程有什么区别？</li>
+<li>线程共享哪些进程资源，有哪些独立资源？</li>
+<li>都说进程线程切换开销大，到底大在哪？</li>
+<li>线程池是什么？它有什么作用？</li>
+<li>你知道有哪些多进程和多线程的使用场景？</li>
+<li>进程和进程之间，线程和线程之间怎么通信？</li>
+<li>Python和Golang的协程有什么区别？</li>
+</ol>
+<p>搞完概念之后可以来试试code，这里有两道leetcode的线程题:</p>
+<ol>
+<li><a href="https://leetcode-cn.com/problems/print-in-order/">按序打印</a></li>
+<li><a href="https://leetcode-cn.com/problems/print-foobar-alternately/">交替打印FooBar</a></li>
+</ol>
+<h2 id="进程线程协程分别是什么">进程、线程、协程分别是什么？</h2>
+<p>应该是很老的一个问题了吧，不管是面试还是操作系统课上都会被问到，这里做一个简单的复习:</p>
+<ol>
+<li>进程是正在运行的程序，由程序，数据和进程控制块组成，它是操作系统资源分配和调度的一个独立单位，进程进程之间是相互隔离的，系统是由一个个独立的进程组成的。举个例子，你开着电脑，同时在用vscode写代码和听音乐，这里，vscode和网易云就是两个独立的进程。</li>
+</ol>
+<p><strong>补充:</strong></p>
+<p>进程控制块（PCB）里面存放着很多东西，有：</p>
+<ol>
+<li>进程标识符，pid
+2）用户可见寄存器，如数据寄存器，地址寄存器等，存放数据，地址
+3）程序计数器，存放程序执行的下一条指令的地址
+4）程序状态寄存器，保存处理器状态
+4）栈指针，系统调用、中断处理时需要用到
+5）进程控制信息，包括通信信息，存储管理信息等</li>
+</ol>
+<ol start="2">
+<li>
+<p>线程是进程的一个实体，是CPU调度的一个基本单位，也是程序执行的基本单位，属于进程的一部分，一个进程内有很多线程，每个线程共享当前进程的资源。举个例子，你在使用网易云时会一边听歌，一遍看歌词，这两个任务就是网易云这个进程下面的两个线程。</p>
+</li>
+<li>
+<p>协程，它的定义就是一个用户态的轻量级线程，它是运行在线程内的，一个线程内运行多个协程，并且对比线程开辟的时候就会指定好栈空间的大小 (<code>ulimit -s</code>命令可以查看)，协程使用的内存是动态变化的，并且它的切换调度由用户自己控制，省去了线程的系统级别的切换开销并且更省内存。</p>
+</li>
+</ol>
+<h2 id="线程共享哪些进程资源有哪些独立资源">线程共享哪些进程资源，有哪些独立资源</h2>
+<h3 id="共享的">共享的</h3>
+<ol>
+<li>进程用户ID和进程组ID</li>
+<li>进程的当前目录</li>
+<li>进程的代码段</li>
+<li>进程的公有数据（可以用来做线程之间的通信）</li>
+<li>进程打开的文件描述符</li>
+<li>进程的信号处理器</li>
+</ol>
+<h3 id="独立的">独立的</h3>
+<ol>
+<li>线程ID</li>
+<li>寄存器组的值：线程切换时需要保存原有线程的寄存器集合的状态，以便将来恢复</li>
+<li>线程栈</li>
+<li>错误返回码：如果共享的话那被其他线程修改了岂不是完犊子了</li>
+<li>线程的信号屏蔽码：每个线程需要的信号都不同，这个应该由线程自己管理</li>
+<li>线程优先级</li>
+</ol>
+<h2 id="都说进程线程切换开销大到底大在哪">都说进程线程切换开销大，到底大在哪</h2>
+<p>面试时答道进程线程区别的时候，总会说到一个点，线程切换开销比进程小。正常难度下，说到这个面试官也就过了，但是难免会遇到较真的，如果继续问下去，开销大在哪，相信会刷掉很大一部分人。</p>
+<h3 id="进程">进程</h3>
+<p>关于进程的开销可以简单的分个类，直接开销和间接开销</p>
+<p>1）直接开销
+直接开销主要有以下这几个：</p>
+<ol>
+<li>切换页表</li>
+<li>刷新TLB，也就是页表缓存</li>
+<li>切换寄存器中的数据</li>
+<li>执行操作系统调度器的代码</li>
+</ol>
+<p><strong>补充</strong>
+这里要对页表，TLB做个补充，毕竟面试官想深究，或者只是随口一问这些是什么，答不出来岂不是尴尬了。
+要讲页表，首先要提到操作系统的虚拟地址和物理地址。我们的代码中操作的都是虚拟地址，那为什么不直接用物理地址呢？
+我的理解是，使用虚拟地址有以下这些好处：</p>
+<ul>
+<li>
+<p>方便多进程的隔离，每个进程的地址空间都可以通过虚拟地址更方便的隔离</p>
+</li>
+<li>
+<p>虚拟地址空间大于物理地址空间，内存不够时可以从虚拟地址中去获取</p>
+</li>
+</ul>
+<p>为什么要扯到这个呢？
+虚拟地址的管理是通过MMU（内存管理单元）来做的，而MMU就是依赖页表实现的，虚拟内存映射到哪一块物理内存就是通过页表来记录的，当然MMU除了做内存映射，还可以做权限保护，在虚拟地址的基础上加上权限管理，可以来决定哪块内存可以访问哪块不可。
+而TLB就是对页表的缓存。</p>
+<p>2）间接开销
+一般进程切换完毕之后，各级缓存的命中率都会大幅下降，当前缓存的代码和数据基本都会失效，又要重新从磁盘中去获取并重新缓存，这比直接读内存的效率低的多，所以间接开销主要花在这部分。</p>
+<h3 id="线程">线程</h3>
+<p>由于线程共享了进程的很多东西，所以线程的切换不会涉及到页表这些，开销会比进程切换开销小。但相较于协程，开销也是有的，具体有以下这些：</p>
+<ol>
+<li>切换上下文，保存并切换寄存器、栈等</li>
+<li>CPU调度</li>
+</ol>
+<p>比起进程，开销是更小的，但频繁切换，也会有不小的开销。</p>
+<h2 id="线程池是什么它有什么作用">线程池是什么？它有什么作用？</h2>
+<p>上面一节提到了，线程的开销虽然相较于进程比较小，但频繁的开辟回收切换，也是一个不小的开销，想像一个高并发的web服务，百万个请求过来，如果创建百万个线程，那系统肯定早就崩了。
+为了解决这种问题，有了线程池，简单来说，线程池限制了线程的无限制创建，通过对有限线程的复用来提高执行效率
+它的基本工作流程是，当有任务过来之后，从线程池中取一个空闲线程，使用完毕之后再返回给线程池，当线程数超过核心线程数之后，将提交的任务存到任务队列里等待空闲线程，当任务队列满了之后，看有没有超过最大线程数，有的话就要执行拒绝策略（默认情况下会抛出异常，表示不能再处理新任务了，或者也可以抛弃新提交的任务）</p>
+<h2 id="你知道有哪些多进程和多线程的使用场景">你知道有哪些多进程和多线程的使用场景</h2>
+<p>多进程：
+比如gunicorn，nginx，都是有一个master进程和多个worker进程的，有master调度管理worker进程，进程进程之间只进行有限的通信，不传递数据，每个进程中采用IO多路复用技术去管理事件，这是一个典型的多进程的使用情况。</p>
+<p>多线程，协程：
+爬虫使用多线程，协程比较多，每一个爬取任务出来的时候可以开启一个线程或者是协程去执行爬取任务，多个任务之间不会阻塞，可以极大提高爬虫效率。还有一写web server，每个请求过来会去开启一个线程或是协程处理任务。</p>
+<h2 id="进程间通信线程间通信">进程间通信，线程间通信</h2>
+<p>上面提到了进程间的通信，那么进程和进程之前，线程和线程之间有哪些通信方式呢？</p>
+<blockquote>
+<p>管道、消息队列、共享内存、信号量、socket、信号</p>
+</blockquote>
+<ol>
+<li>管道
+类似于一个缓存区，一个进程把消息放进去，等待另一个进程去取，是单向传输的。
+举个例子，linux的mkfifo命令
+开启一个终端运行：</li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">mkfifo <span class="nb">test</span>
+<span class="nb">echo</span> <span class="s2">&#34;a test&#34;</span> &gt; <span class="nb">test</span>
+</code></pre></div><p>它开启了一个test管道，向里面放了一个a test的消息，这时候是阻塞的，等待另一个进程去取</p>
+<p>开启另一个终端:</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">cat &lt; <span class="nb">test</span>
+</code></pre></div><p>这时候，另一个终端显示了a test，同时之前的那个终端也不在阻塞，结束了进程</p>
+<p>从这个例子可以看出来，管道这种方式虽然使用简单，但是确是单向的</p>
+<ol start="2">
+<li>消息队列
+为了解决管道单向传输的缺点，有了消息队列，它也是类似有一个缓存区，一个进程把消息放进队列只有，不用等待，可以去做其他事，而另一个进程需要时再去队列里取那个消息</li>
+</ol>
+<p>消息队列这种机制也有缺点，当消息内存很大时，两个进程的存取消息开销会很大</p>
+<ol start="3">
+<li>共享内存
+为了解决消息队列的问题，可以使用另一种机制&ndash;共享内存，虽然进程间的内存是独立的，但其实操作系统分配的是虚拟内存，需要共享时，只要把两个进程间的一部分拿出来映射到同一块内存上，就是实现内存共享</li>
+</ol>
+<p>但这样的缺点就是，多进程情况下会出现内存竞争的情况</p>
+<ol start="4">
+<li>
+<p>信号量
+出现竞争时，就可以通过信号量来解决了，信号量起的作用相当于一个计数器，举个例子，当我们给一块内存的信号量设为1时，当ab两个进程都要去访问同一个内存时，a先访问了，信号量就会减为0，这时候b再想去访问就不能访问到了</p>
+</li>
+<li>
+<p>socket
+前面几个方法都是在同一个主机上的进程间的通信方式，不同主机直接可以用socket来解决</p>
+</li>
+<li>
+<p>信号
+信号是一种通知机制，信号发送方通过信号来通知接收方某件事的发生，接收方做相应处理，一般信号都会绑定一个处理方法，比如处理函数或者设置忽略这个信号</p>
+</li>
+</ol>
+<ul>
+<li>线程与线程的通信方式</li>
+</ul>
+<blockquote>
+<p>锁，信号量，信号</p>
+</blockquote>
+<ol>
+<li>
+<p>锁
+一般有三种方式：
+1）互斥锁：一种排它的锁，防止自己的数据被并发的修改
+2）共享锁：允许多个线程并发的读，但不能写
+3）条件变量：搭配互斥锁使用，当某个条件为真时才能执行，对条件的判断要在互斥锁的保护下进行</p>
+</li>
+<li>
+<p>信号量
+和进程的信号量机制类似</p>
+</li>
+<li>
+<p>信号
+和进程的信号机制类似</p>
+</li>
+</ol>
+<h2 id="python的协程和go的协程有什么区别">Python的协程和Go的协程有什么区别</h2>
+<p>回顾了一下上面的基础概念，我想用过Python和Go的同学可能会有这样的疑问，Python和Go的协程有什么区别？</p>
+<ol>
+<li>
+<p>总结来说，Python的协程是1:N的，一个线程内运行多个协程，而Go的协程是M:N的，N个协程会映射到M个线程上；</p>
+</li>
+<li>
+<p>Go的协程本质上还是对系统线程的调用，而Python的协程是基于Event Loop模型的，简单的说就是同步任务在主线程上排队运行形成一个执行栈，而一些IO请求作为异步任务放到任务队列中，一旦执行栈中的任务执行完毕，主线程就去任务队列中取异步任务开始执行，不断重复以上的步骤。</p>
+</li>
+<li>
+<p>基于上面的原因，Go可以做到真正的并行，而Python只能做到并发执行</p>
+</li>
+<li>
+<p>此外因为Python对协程支持的晚，所以它最大的问题是大多数第三方库都对asyncio的支持不太好，要使用asyncio的话遇到阻塞操作还是要去开启一个线程执行。替代的方案倒是有，可以使用gevent的monkey patch的模式去运行，不过这又会导致出一些奇奇怪怪的问题，框架层面也可以通过celery来做异步任务</p>
+</li>
+</ol>
+<h2 id="例题">例题</h2>
+<ol>
+<li><a href="https://leetcode-cn.com/problems/print-in-order/">leetcode 1114 按序打印</a></li>
+</ol>
+<p>是一条线程通信题，leetcode上还有其它类似的题，比如经典的哲学家进餐问题，大家可以去练练。
+题解如下：</p>
+<ol>
+<li>锁</li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">threading</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l2</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l2</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">printFirst</span><span class="p">:</span> <span class="s1">&#39;Callable[[], None]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+        
+        <span class="c1"># printFirst() outputs &#34;first&#34;. Do not change or remove this line.</span>
+        <span class="n">printFirst</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">second</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">printSecond</span><span class="p">:</span> <span class="s1">&#39;Callable[[], None]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+        
+        <span class="c1"># printSecond() outputs &#34;second&#34;. Do not change or remove this line.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l1</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="n">printSecond</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l2</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">third</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">printThird</span><span class="p">:</span> <span class="s1">&#39;Callable[[], None]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+        
+        <span class="c1"># printThird() outputs &#34;third&#34;. Do not change or remove this line.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l2</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="n">printThird</span><span class="p">()</span>
+</code></pre></div><ol start="2">
+<li>信号量</li>
+</ol>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s1</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Semaphore</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Semaphore</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">printFirst</span><span class="p">:</span> <span class="s1">&#39;Callable[[], None]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+        
+        <span class="c1"># printFirst() outputs &#34;first&#34;. Do not change or remove this line.</span>
+        <span class="n">printFirst</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">second</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">printSecond</span><span class="p">:</span> <span class="s1">&#39;Callable[[], None]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+        
+        <span class="c1"># printSecond() outputs &#34;second&#34;. Do not change or remove this line.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="n">printSecond</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">third</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">printThird</span><span class="p">:</span> <span class="s1">&#39;Callable[[], None]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+        
+        <span class="c1"># printThird() outputs &#34;third&#34;. Do not change or remove this line.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="n">printThird</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+</code></pre></div><ol start="2">
+<li><a href="https://leetcode-cn.com/problems/print-foobar-alternately/">交替打印FooBar</a></li>
+</ol>
+<p>直接用互斥锁</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Lock</span>
+
+<span class="k">class</span> <span class="nc">FooBar</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bl</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">al</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bl</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">printFoo</span><span class="p">:</span> <span class="s1">&#39;Callable[[], None]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">al</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+            <span class="c1"># printFoo() outputs &#34;foo&#34;. Do not change or remove this line.</span>
+            <span class="n">printFoo</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bl</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">printBar</span><span class="p">:</span> <span class="s1">&#39;Callable[[], None]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bl</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+            <span class="c1"># printBar() outputs &#34;bar&#34;. Do not change or remove this line.</span>
+            <span class="n">printBar</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">al</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+</code></pre></div><h2 id="参考">参考</h2>
+<ol>
+<li><a href="https://blog.nowcoder.net/n/6eebf436f389447793c06d6b9560d53d">阿里面试真题解析之进程和线程的区别</a></li>
+<li><a href="http://www.ruanyifeng.com/blog/2014/10/event-loop.html">Js的Event Loop模型</a></li>
+<li><a href="https://www.zhihu.com/question/20696698">cpu 为什么要使用虚拟地址空间与物理地址空间映射？解决了什么样的问题？</a></li>
+<li><a href="https://www.cnblogs.com/ikaka/p/3602536.html">MMU</a></li>
+<li><a href="http://www.voidcn.com/article/p-wicqspgj-eb.html">线程共享了哪些资源</a></li>
+<li><a href="https://blog.nowcoder.net/n/925b49e784be4e43802ddf96e69df6d8">线程池</a></li>
+<li><a href="https://www.zhihu.com/question/325835984/answer/693761824">知乎-Python和Go的协程的区别</a></li>
+</ol></div>
+                    <div class="post_footer">
+                        
+                        <div class="meta">
+                            <div class="info">
+                                <span class="field tags">
+                                    <i class="ri-stack-line"></i>
+                                    
+                                    <a href="https://hj24.life/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a>
+                                    
+                                </span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                
+                
+<div class="doc_comments">
+	<div id="gitalk-container"></div>
+</div>
+<link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<script type="text/javascript">
+let gitalk = new Gitalk({
+  clientID: '946e62e1049edfb63fd7',
+  clientSecret: 'ea3d0fcb9025fb88bd8dd50742bcf43dacd6af34',
+  repo: 'hj24.github.io',
+  owner: 'hj24',
+  admin: ['hj24'],
+  id: '2020-01-29 15:36:16 \x2b0800 CST',      
+  distractionFreeMode: false,  
+  title : '进程线程和协程浅析',
+  labels : []
+});
+gitalk.render('gitalk-container')
+</script>
+                
+            </div>
+        </div>
+    </div>
+    <a id="back_to_top" href="#" class="back_to_top"><i class="ri-arrow-up-s-line"></i></a>
+    <footer class="footer">
+    <div class="powered_by">
+        <a href="https://varkai.com">Designed by VarKai,</a>
+        <a href="http://www.gohugo.io/">Proudly published with Hugo</a>
+    </div>
+
+    <div class="footer_slogan">
+        <span>hj24&#39;s life log</span>
+    </div>
+</footer>
+    <script src="https://hj24.life/js/jquery-3.5.1.min.js"></script>
+<link href="https://hj24.life/css/fancybox.min.css" rel="stylesheet">
+<script src="https://hj24.life/js/fancybox.min.js"></script>
+<script src="https://hj24.life/js/zozo.js"></script>
+
+
+<script type="text/javascript" async
+    src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                TeX: {
+                    equationNumbers: { autoNumber: "AMS" },
+                    extensions: ["AMSmath.js", "AMSsymbols.js"]
+                }
+            }
+        });
+
+        MathJax.Hub.Queue(function () {
+            
+            
+            
+            var all = MathJax.Hub.getAllJax(), i;
+            for (i = 0; i < all.length; i += 1) {
+                all[i].SourceElement().parentNode.className += ' has-jax';
+            }
+        });
+    </script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+
+
+
+</body>
+
+</html>
