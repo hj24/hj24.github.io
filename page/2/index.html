@@ -105,6 +105,43 @@
 
 <div class="post animated fadeInDown">
     <div class="post_title">
+        <h2><a href='/posts/%E5%B0%86python%E9%A1%B9%E7%9B%AE%E6%89%93%E5%8C%85%E6%88%90docker%E9%95%9C%E5%83%8F/'>将Python项目打包成Docker镜像</a></h2>
+    </div>
+    
+    <div class="list">
+        <div class="post_content markdown">
+            <p><meta name="referrer" content="no-referrer" />
+之前写了一篇 Dockerfile编写指南，不过没有涉及到部署项目这种相对复杂的操作，最近写毕设需要把项目打包成docker镜像，部署在服务器上，因此写下这篇博客，对上面那篇做一个补充引申。
+<p>一个将Python项目打包成docker镜像的基本流程如下:</p>
+<blockquote>
+<p>编写好Dockerfile上传至Github/Gitlab -&gt; git拉取代码到服务器 -&gt; build镜像
+-&gt; docker run配置端口映射 -&gt; 设置服务器安全组</p>
+</blockquote></p>
+        </div>
+    </div>
+    
+    <div class="post_footer">
+        <div class="meta">
+            <div class="info">
+                <span class="field">
+                    <i class="ri-map-pin-time-line"></i>
+                    <span class="date">2020.01.31</span>
+                </span>
+                
+                <span class="field tags">
+                    <i class="ri-stack-line"></i>
+                    
+                    <a href="https://hj24.life/tags/devops/">Devops</a>
+                    
+                </span>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="post animated fadeInDown">
+    <div class="post_title">
         <h2><a href='/posts/dockerfile%E7%BC%96%E5%86%99%E6%8C%87%E5%8C%97/'>Dockerfile编写指北</a></h2>
     </div>
     
@@ -287,37 +324,6 @@ pip install =&gt; docker build</p>
     </div>
 </div>
 
-<div class="post animated fadeInDown">
-    <div class="post_title">
-        <h2><a href='/posts/%E8%A7%A3%E5%86%B3hexo%E5%8D%9A%E5%AE%A2%E4%B8%8D%E8%83%BD%E6%98%BE%E7%A4%BA%E5%9B%BE%E5%BA%8A%E5%9B%BE%E7%89%87%E9%97%AE%E9%A2%98/'>解决hexo博客不能显示图床图片问题</a></h2>
-    </div>
-    
-    <div class="list">
-        <div class="post_content markdown">
-            <p><p>刚搭建好了hexo博客，写了一篇带图的文章，结果发现图挂了…之前看博客扫到hexo博客显示本地图片可能会有问题，于是选了图床图片的方式插图，结果还是没能幸免，好在搜索了半天，解决了这个问题，这里做个记录，帮助后面遇到问题的同学。</p></p>
-        </div>
-    </div>
-    
-    <div class="post_footer">
-        <div class="meta">
-            <div class="info">
-                <span class="field">
-                    <i class="ri-map-pin-time-line"></i>
-                    <span class="date">2019.05.19</span>
-                </span>
-                
-                <span class="field tags">
-                    <i class="ri-stack-line"></i>
-                    
-                    <a href="https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/">踩坑记录</a>
-                    
-                </span>
-                
-            </div>
-        </div>
-    </div>
-</div>
-
 
 <div class="pagination">
     
@@ -326,6 +332,10 @@ pip install =&gt; docker build</p>
         Prev
     </a>
     
+    
+    <a href="/page/3/" class="next">
+        Next
+    </a>
     
     
 </div>
