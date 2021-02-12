@@ -12,6 +12,15 @@
     
     
     <item>
+      <title>记一次扇贝账号服务的压测</title>
+      <link>https://hj24.life/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%89%87%E8%B4%9D%E8%B4%A6%E5%8F%B7%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%8E%8B%E6%B5%8B/</link>
+      <pubDate>Fri, 12 Feb 2021 14:41:20 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%89%87%E8%B4%9D%E8%B4%A6%E5%8F%B7%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%8E%8B%E6%B5%8B/</guid>
+      <description>&lt;p&gt;按照经验估计，每年年后过来四六级查分的时候都是扇贝各个业务的高峰期，也是扇贝新用户注册的高峰，19 年账号服务刚上线的时候因为这波高峰挂掉过，于是每年春节放假前对账号系统做压测就成了传统，这一次也是我接手账号服务之后做的第一次压测，做个简单的记录。&lt;/p&gt;</description>
+    </item>
+    
+    <item>
       <title>一次P0事故引起的业务思考</title>
       <link>https://hj24.life/posts/%E4%B8%80%E6%AC%A1p0%E4%BA%8B%E6%95%85%E5%BC%95%E8%B5%B7%E7%9A%84%E4%B8%9A%E5%8A%A1%E6%80%9D%E8%80%83/</link>
       <pubDate>Sun, 15 Nov 2020 15:38:25 +0800</pubDate>
@@ -54,7 +63,7 @@
       <pubDate>Sat, 14 Nov 2020 17:37:06 +0800</pubDate>
       
       <guid>https://hj24.life/about/</guid>
-      <description>坐标南京 - 后端开发工程师 @扇贝网 永远也不知道怎么写的关于 你好，我是 hj24，不知道你是怎么来到这个博客的，但是非常欢迎你 👏 。 每当我点进一个博客的时候，我最喜欢看的就是关于界面，在这里我也许可以找到关于</description>
+      <description>坐标南京 - @扇贝网 后端开发工程师 永远也不知道怎么写的关于 你好，我是 hj24，不知道你是怎么来到这个博客的，但是非常欢迎你 👏 。 每当我点进一个博客的时候，我最喜欢看的就是关于界面，在这里我也许可以找到关于</description>
     </item>
     
     <item>

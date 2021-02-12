@@ -6,10 +6,19 @@
     <description>Recent content in Devops on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Wed, 05 Feb 2020 19:50:30 +0800</lastBuildDate>
+    <lastBuildDate>Fri, 12 Feb 2021 14:41:20 +0800</lastBuildDate>
     
 	<atom:link href="https://hj24.life/tags/devops/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>记一次扇贝账号服务的压测</title>
+      <link>https://hj24.life/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%89%87%E8%B4%9D%E8%B4%A6%E5%8F%B7%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%8E%8B%E6%B5%8B/</link>
+      <pubDate>Fri, 12 Feb 2021 14:41:20 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%89%87%E8%B4%9D%E8%B4%A6%E5%8F%B7%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%8E%8B%E6%B5%8B/</guid>
+      <description>&lt;p&gt;按照经验估计，每年年后过来四六级查分的时候都是扇贝各个业务的高峰期，也是扇贝新用户注册的高峰，19 年账号服务刚上线的时候因为这波高峰挂掉过，于是每年春节放假前对账号系统做压测就成了传统，这一次也是我接手账号服务之后做的第一次压测，做个简单的记录。&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>Gitlab CI CD指北</title>
