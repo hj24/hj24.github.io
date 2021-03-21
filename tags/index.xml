@@ -6,10 +6,19 @@
     <description>Recent content in Tags on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Fri, 12 Feb 2021 14:41:20 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 21 Mar 2021 15:27:28 +0800</lastBuildDate>
     
 	<atom:link href="https://hj24.life/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>踩坑记录</title>
+      <link>https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/</link>
+      <pubDate>Sun, 21 Mar 2021 15:27:28 +0800</pubDate>
+      
+      <guid>https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>Devops</title>
@@ -35,15 +44,6 @@
       <pubDate>Sun, 15 Nov 2020 15:38:25 +0800</pubDate>
       
       <guid>https://hj24.life/tags/%E4%B8%9A%E5%8A%A1%E6%80%9D%E8%80%83/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>踩坑记录</title>
-      <link>https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/</link>
-      <pubDate>Sun, 15 Nov 2020 15:38:25 +0800</pubDate>
-      
-      <guid>https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/</guid>
       <description></description>
     </item>
     

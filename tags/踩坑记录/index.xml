@@ -6,10 +6,24 @@
     <description>Recent content in 踩坑记录 on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 15 Nov 2020 15:38:25 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 21 Mar 2021 15:27:28 +0800</lastBuildDate>
     
 	<atom:link href="https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Peewee连接kingshard时支持批量insert吗</title>
+      <link>https://hj24.life/posts/peewee%E8%BF%9E%E6%8E%A5kingshard%E6%97%B6%E6%94%AF%E6%8C%81%E6%89%B9%E9%87%8Finsert%E5%90%97/</link>
+      <pubDate>Sun, 21 Mar 2021 15:27:28 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/peewee%E8%BF%9E%E6%8E%A5kingshard%E6%97%B6%E6%94%AF%E6%8C%81%E6%89%B9%E9%87%8Finsert%E5%90%97/</guid>
+      <description>&lt;p&gt;kingshard 是一个用 Go 编写的高性能 Mysql 代理，使用它可以做到业务层面无感知的分库分表，它会自动在业务与数据库之间做好数据的分发与聚合。
+显然，从官方文档来看，kingshard 是支持跨节点的批量 insert 操作的，原文如下:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;支持非事务方式更新（insert, delete, update, replace）多个 node 上的子表&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;而 peewee 是 python 中一个微型 orm，不过因为小众，所以连接 kingshard 时发生一些奇怪的问题也很难找到前人踩的坑，所以本文就从搭建一套 kingshard 环境讲起，就验证 peewee 是否能成功在 kingshard 中跨节点批量 insert 做个记录。&lt;/p&gt;</description>
+    </item>
     
     <item>
       <title>一次P0事故引起的业务思考</title>

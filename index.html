@@ -105,6 +105,42 @@
 
 <div class="post animated fadeInDown">
     <div class="post_title">
+        <h2><a href='/posts/peewee%E8%BF%9E%E6%8E%A5kingshard%E6%97%B6%E6%94%AF%E6%8C%81%E6%89%B9%E9%87%8Finsert%E5%90%97/'>Peewee连接kingshard时支持批量insert吗</a></h2>
+    </div>
+    
+    <div class="list">
+        <div class="post_content markdown">
+            <p><p>kingshard 是一个用 Go 编写的高性能 Mysql 代理，使用它可以做到业务层面无感知的分库分表，它会自动在业务与数据库之间做好数据的分发与聚合。
+显然，从官方文档来看，kingshard 是支持跨节点的批量 insert 操作的，原文如下:</p>
+<blockquote>
+<p>支持非事务方式更新（insert, delete, update, replace）多个 node 上的子表</p>
+</blockquote>
+<p>而 peewee 是 python 中一个微型 orm，不过因为小众，所以连接 kingshard 时发生一些奇怪的问题也很难找到前人踩的坑，所以本文就从搭建一套 kingshard 环境讲起，就验证 peewee 是否能成功在 kingshard 中跨节点批量 insert 做个记录。</p></p>
+        </div>
+    </div>
+    
+    <div class="post_footer">
+        <div class="meta">
+            <div class="info">
+                <span class="field">
+                    <i class="ri-map-pin-time-line"></i>
+                    <span class="date">2021.03.21</span>
+                </span>
+                
+                <span class="field tags">
+                    <i class="ri-stack-line"></i>
+                    
+                    <a href="https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/">踩坑记录</a>
+                    
+                </span>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="post animated fadeInDown">
+    <div class="post_title">
         <h2><a href='/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%89%87%E8%B4%9D%E8%B4%A6%E5%8F%B7%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%8E%8B%E6%B5%8B/'>记一次扇贝账号服务的压测</a></h2>
     </div>
     
@@ -260,44 +296,6 @@
                     <i class="ri-stack-line"></i>
                     
                     <a href="https://hj24.life/tags/python/">Python</a>
-                    
-                </span>
-                
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="post animated fadeInDown">
-    <div class="post_title">
-        <h2><a href='/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/'>Gitlab CI CD指北</a></h2>
-    </div>
-    
-    <div class="list">
-        <div class="post_content markdown">
-            <p><meta name="referrer" content="no-referrer" />
-之前在公司倒腾过基于Gitlab的CI/CD，现在重新记录一遍流程，做个备忘。
-<p>一个典型的流程是这样的：</p>
-<blockquote>
-<p>提交代码触发CI pipeline -&gt; 安装依赖、编译、自动化测试 -&gt; fix bug
--&gt; 回到上一步 -&gt; Review代码 -&gt; 合并到发布分支 -&gt; 触发CD -&gt; 部署代码、发布</p>
-</blockquote>
-<p>基本上更复杂一些的流程都是在这个基础上增改了，下面来走一遍这个流程。</p></p>
-        </div>
-    </div>
-    
-    <div class="post_footer">
-        <div class="meta">
-            <div class="info">
-                <span class="field">
-                    <i class="ri-map-pin-time-line"></i>
-                    <span class="date">2020.02.05</span>
-                </span>
-                
-                <span class="field tags">
-                    <i class="ri-stack-line"></i>
-                    
-                    <a href="https://hj24.life/tags/devops/">Devops</a>
                     
                 </span>
                 

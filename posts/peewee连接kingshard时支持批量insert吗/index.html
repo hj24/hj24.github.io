@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="hj24" />
+	
+	
+	
+	<title>Peewee连接kingshard时支持批量insert吗 ｜ 客舟听雨</title>
+	
+    
+    
+    <meta name="description" content="kingshard 是一个用 Go 编写的高性能 Mysql 代理，使用它可以做到业务层面无感知的分库分表，它会自动在业务与数据库之间做好数据的分发与聚合。 显然，从官方文档来看，kingshard 是支持跨节点的批量 insert 操作的，原文如下:
+ 支持非事务方式更新（insert, delete, update, replace）多个 node 上的子表
+ 而 peewee 是 python 中一个微型 orm，不过因为小众，所以连接 kingshard 时发生一些奇怪的问题也很难找到前人踩的坑，所以本文就从搭建一套 kingshard 环境讲起，就验证 peewee 是否能成功在 kingshard 中跨节点批量 insert 做个记录。
+" />
+    
+
+    
+    
+    <meta name="keywords" content="Hugo, theme, zozo" />
+    
+
+	
+    
+    <link rel="shortcut icon" href="https://hj24.life/images/favicon.ico" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.lifecss/normalize.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/zozo.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/highlight.css" />
+
+    
+    
+</head>
+
+<body>
+    <div class="main animate__animated animate__fadeInDown">
+        <div class="nav_container animated fadeInDown">
+    <div class="site_nav" id="site_nav">
+        <ul>
+            
+            <li>
+                <a href="/">首页</a>
+            </li>
+            
+            <li>
+                <a href="/posts/">归档</a>
+            </li>
+            
+            <li>
+                <a href="/tags/">标签</a>
+            </li>
+            
+            <li>
+                <a href="/fav/">好站</a>
+            </li>
+            
+            <li>
+                <a href="/snippets/">代码片</a>
+            </li>
+            
+            <li>
+                <a href="/about/">关于</a>
+            </li>
+            
+        </ul>
+    </div>
+    <div class="menu_icon">
+        <a id="menu_icon"><i class="ri-menu-line"></i></a>
+    </div>
+</div>
+        <div class="header animated fadeInDown">
+    <div class="site_title_container">
+        <div class="site_title">
+            <h1>
+                <a href="https://hj24.life">
+                    <span>客舟听雨</span>
+                </a>
+            </h1>
+        </div>
+        <div class="description">
+            <p class="sub_title">hj24.life</p>
+            <div class="my_socials">
+                
+                
+                <a href="https://github.com/hj24" title="github" target="_blank"><i class="ri-github-fill"></i></a>
+                
+                
+                
+                <a href="https://www.zhihu.com/people/da-li-ju-13" title="zhihu" target="_blank"><i class="ri-zhihu-fill"></i></a>
+                
+                
+                <a href="https://hj24.life/index.xml" type="application/rss+xml" title="rss" target="_blank"><i
+                        class="ri-rss-fill"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="content">
+            <div class="post_page">
+                <div class="post animate__animated animate__fadeInDown">
+                    <div class="post_title post_detail_title">
+                        <h2><a href='/posts/peewee%E8%BF%9E%E6%8E%A5kingshard%E6%97%B6%E6%94%AF%E6%8C%81%E6%89%B9%E9%87%8Finsert%E5%90%97/'>Peewee连接kingshard时支持批量insert吗</a></h2>
+                        <span class="date">2021.03.21</span>
+                    </div>
+                    <div class="post_content markdown"><p>kingshard 是一个用 Go 编写的高性能 Mysql 代理，使用它可以做到业务层面无感知的分库分表，它会自动在业务与数据库之间做好数据的分发与聚合。
+显然，从官方文档来看，kingshard 是支持跨节点的批量 insert 操作的，原文如下:</p>
+<blockquote>
+<p>支持非事务方式更新（insert, delete, update, replace）多个 node 上的子表</p>
+</blockquote>
+<p>而 peewee 是 python 中一个微型 orm，不过因为小众，所以连接 kingshard 时发生一些奇怪的问题也很难找到前人踩的坑，所以本文就从搭建一套 kingshard 环境讲起，就验证 peewee 是否能成功在 kingshard 中跨节点批量 insert 做个记录。</p>
+<h2 id="环境搭建">环境搭建</h2>
+<ul>
+<li>直接从 master 分支拉取的最新版 kingshard</li>
+<li>peewee 3.14.3</li>
+<li>mysql 8.0，搭建两个名为 cas 的节点 (忽略 cas 这个名字)</li>
+</ul>
+<h3 id="启动两个-mysql-实例">启动两个 mysql 实例</h3>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">docker pull mysql:latest
+
+<span class="c1"># 启动两个 cas 节点，分别监听 3307、3308 端口</span>
+docker run -itd --name cas-node-1 -p 3307:3306 -e <span class="nv">MYSQL_ROOT_PASSWORD</span><span class="o">=</span>toor3306 mysql
+docker run -itd --name cas-node-2 -p 3308:3306 -e <span class="nv">MYSQL_ROOT_PASSWORD</span><span class="o">=</span>toor3306 mysql
+
+<span class="c1"># 修改 host 文件，添加下面两行，方便后面连接</span>
+sudo vim /etc/hosts
+127.0.0.1 cas-node-1
+127.0.0.1 cas-node-2
+</code></pre></div><h3 id="配置-mysql-以适配-kingshard">配置 mysql 以适配 kingshard</h3>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># 分别连接两个实例，执行下面两个命令</span>
+mysql -h cas-node-1 -u root -P <span class="m">3307</span> -p
+mysql -h cas-node-1 -u root -P <span class="m">3308</span> -p
+</code></pre></div><ul>
+<li>创建默认数据库</li>
+</ul>
+<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="o">`</span><span class="n">cas</span><span class="o">`</span> <span class="nb">CHARACTER</span> <span class="k">SET</span> <span class="n">utf8mb4</span> <span class="k">COLLATE</span> <span class="n">utf8mb4_general_ci</span><span class="p">;</span>
+</code></pre></div><ul>
+<li>修改密码验证方式，mysql 8 之后修改了默认的身份验证方式，kingshard 目前还不支持，不修改的话会有 <code>Client does not support authentication protocol requested by server; consider upgrading MySQL client</code> 的报错</li>
+<li>相关问题参考<a href="https://stackoverflow.com/questions/50093144/mysql-8-0-client-does-not-support-authentication-protocol-requested-by-server">这里</a></li>
+</ul>
+<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="o">//</span> <span class="err">首先</span>
+<span class="k">ALTER</span> <span class="k">USER</span> <span class="s1">&#39;root&#39;</span><span class="o">@</span><span class="s1">&#39;%&#39;</span> <span class="n">IDENTIFIED</span> <span class="k">WITH</span> <span class="n">mysql_native_password</span> <span class="k">BY</span> <span class="s1">&#39;password&#39;</span><span class="p">;</span>
+<span class="o">//</span> <span class="err">然后</span>
+<span class="n">flush</span> <span class="k">privileges</span><span class="p">;</span>
+</code></pre></div><h3 id="配置并启动-kingshard">配置并启动 kingshard</h3>
+<p>参考<a href="https://github.com/flike/kingshard/blob/master/README_ZH.md">官网</a>安装并运行:</p>
+<blockquote>
+<ol>
+<li>安装Go语言环境，具体步骤请Google。</li>
+<li>git clone <a href="https://github.com/flikekingshard.git">https://github.com/flikekingshard.git</a> $GOPATH/src/github.com/flike/kingshard</li>
+<li>cd $GOPATH/src/github.com/flike/kingshard</li>
+<li>source ./dev.sh</li>
+<li>make</li>
+<li>设置配置文件</li>
+<li>运行kingshard。./bin/kingshard -config=ks.yaml</li>
+</ol>
+</blockquote>
+<p>按前面配置的 mysql 节点，写对应的 kingshard 配置文件，采用按 user_id 哈希的方式，对 64 取模，一个节点 32 张表:</p>
+<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># server listen addr</span><span class="w">
+</span><span class="w"></span><span class="k">addr </span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">9696</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># prometheus server listen addr</span><span class="w">
+</span><span class="w"></span><span class="k">prometheus_addr </span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">7080</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># server user and password</span><span class="w">
+</span><span class="w"></span><span class="k">user_list</span><span class="p">:</span><span class="w">
+</span><span class="w"></span><span class="sd">-
+</span><span class="sd">    user :  root</span><span class="w">
+</span><span class="w">    </span><span class="k">password </span><span class="p">:</span><span class="w"> </span>toor333666<span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># the web api server</span><span class="w">
+</span><span class="w"></span><span class="k">web_addr </span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">9797</span><span class="w">
+</span><span class="w"></span><span class="c">#HTTP Basic Auth</span><span class="w">
+</span><span class="w"></span><span class="k">web_user </span><span class="p">:</span><span class="w"> </span>admin<span class="w">
+</span><span class="w"></span><span class="k">web_password </span><span class="p">:</span><span class="w"> </span>admin<span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># if set log_path, the sql log will write into log_path/sql.log,the system log</span><span class="w">
+</span><span class="w"></span><span class="c"># will write into log_path/sys.log</span><span class="w">
+</span><span class="w"></span><span class="c">#log_path : /Users/flike/log</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># log level[debug|info|warn|error],default error</span><span class="w">
+</span><span class="w"></span><span class="k">log_level </span><span class="p">:</span><span class="w"> </span>debug<span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># if set log_sql(on|off) off,the sql log will not output</span><span class="w">
+</span><span class="w"></span><span class="k">log_sql</span><span class="p">:</span><span class="w"> </span>on<span class="w">
+</span><span class="w"> 
+</span><span class="w"></span><span class="c"># only log the query that take more than slow_log_time ms</span><span class="w">
+</span><span class="w"></span><span class="c">#slow_log_time : 100</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># the path of blacklist sql file</span><span class="w">
+</span><span class="w"></span><span class="c"># all these sqls in the file will been forbidden by kingshard</span><span class="w">
+</span><span class="w"></span><span class="c">#blacklist_sql_file: /Users/flike/blacklist</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># only allow this ip list ip to connect kingshard</span><span class="w">
+</span><span class="w"></span><span class="c"># support ip and ip segment</span><span class="w">
+</span><span class="w"></span><span class="c">#allow_ips : 127.0.0.1,192.168.15.0/24</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># the charset of kingshard, if you don&#39;t set this item</span><span class="w">
+</span><span class="w"></span><span class="c"># the default charset of kingshard is utf8.</span><span class="w">
+</span><span class="w"></span><span class="k">proxy_charset</span><span class="p">:</span><span class="w"> </span>utf8mb4<span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># node is an agenda for real remote mysql server.</span><span class="w">
+</span><span class="w"></span><span class="k">nodes </span><span class="p">:</span><span class="w">
+</span><span class="w"></span>- <span class="w">
+</span><span class="w">    </span><span class="k">name </span><span class="p">:</span><span class="w"> </span>cas-node<span class="m">-1</span><span class="w"> 
+</span><span class="w">
+</span><span class="w">    </span><span class="c"># default max conns for mysql server</span><span class="w">
+</span><span class="w">    </span><span class="k">max_conns_limit </span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
+</span><span class="w">
+</span><span class="w">    </span><span class="c"># all mysql in a node must have the same user and password</span><span class="w">
+</span><span class="w">    </span><span class="k">user </span><span class="p">:</span><span class="w">  </span>root<span class="w"> 
+</span><span class="w">    </span><span class="k">password </span><span class="p">:</span><span class="w"> </span>toor333666<span class="w">
+</span><span class="w">
+</span><span class="w">    </span><span class="c"># master represents a real mysql master server </span><span class="w">
+</span><span class="w">    </span><span class="k">master </span><span class="p">:</span><span class="w"> </span><span class="m">127.0.0.1</span><span class="p">:</span><span class="m">3307</span><span class="w">
+</span><span class="w">
+</span><span class="w">    </span><span class="c"># slave represents a real mysql salve server,and the number after &#39;@&#39; is </span><span class="w">
+</span><span class="w">    </span><span class="c"># read load weight of this slave.</span><span class="w">
+</span><span class="w">    </span><span class="c">#slave : 192.168.59.101:3307@2,192.168.59.101:3307@3</span><span class="w">
+</span><span class="w">    </span><span class="k">down_after_noalive </span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
+</span><span class="w"></span>- <span class="w">
+</span><span class="w">    </span><span class="k">name </span><span class="p">:</span><span class="w"> </span>cas-node<span class="m">-2</span><span class="w"> 
+</span><span class="w">
+</span><span class="w">    </span><span class="c"># default max conns for mysql server</span><span class="w">
+</span><span class="w">    </span><span class="k">max_conns_limit </span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
+</span><span class="w">
+</span><span class="w">    </span><span class="c"># all mysql in a node must have the same user and password</span><span class="w">
+</span><span class="w">    </span><span class="k">user </span><span class="p">:</span><span class="w">  </span>root<span class="w"> 
+</span><span class="w">    </span><span class="k">password </span><span class="p">:</span><span class="w"> </span>toor333666<span class="w">
+</span><span class="w">
+</span><span class="w">    </span><span class="c"># master represents a real mysql master server </span><span class="w">
+</span><span class="w">    </span><span class="k">master </span><span class="p">:</span><span class="w"> </span><span class="m">127.0.0.1</span><span class="p">:</span><span class="m">3308</span><span class="w">
+</span><span class="w">
+</span><span class="w">    </span><span class="c"># down mysql after N seconds noalive</span><span class="w">
+</span><span class="w">    </span><span class="c"># 0 will no down</span><span class="w">
+</span><span class="w">    </span><span class="k">down_after_noalive</span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
+</span><span class="w">
+</span><span class="w"></span><span class="c"># schema defines sharding rules, the db is the sharding table database.</span><span class="w">
+</span><span class="w"></span><span class="k">schema_list </span><span class="p">:</span><span class="w">
+</span><span class="w"></span><span class="sd">-
+</span><span class="sd">    user: root</span><span class="w">
+</span><span class="w">    </span><span class="k">nodes</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>cas-node<span class="m">-1</span><span class="p">,</span>cas-node<span class="m">-2</span><span class="p">]</span><span class="w">
+</span><span class="w">    </span><span class="k">default</span><span class="p">:</span><span class="w"> </span>cas-node<span class="m">-1</span><span class="w">
+</span><span class="w">    </span><span class="k">shard</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="k">db</span><span class="p">:</span><span class="w"> </span>cas<span class="w">
+</span><span class="w">      </span><span class="k">table</span><span class="p">:</span><span class="w"> </span>test<span class="w">
+</span><span class="w">      </span><span class="k">key</span><span class="p">:</span><span class="w"> </span>user_id<span class="w">
+</span><span class="w">      </span><span class="k">nodes</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- cas-node<span class="m">-1</span><span class="w">
+</span><span class="w">      </span>- cas-node<span class="m">-2</span><span class="w">
+</span><span class="w">      </span><span class="k">type</span><span class="p">:</span><span class="w"> </span>hash<span class="w">
+</span><span class="w">      </span><span class="k">locations</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="m">32</span><span class="p">,</span><span class="w"> </span><span class="m">32</span><span class="p">]</span><span class="w">
+</span></code></pre></div><p>修改 host 文件，添加下面这行:</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">127.0.0.1 kingshard
+</code></pre></div><p>看到下面这张图，kingshard 就跑起来了，和它文档描述的一样，配置运行确实很简单:
+<img src="https://tva1.sinaimg.cn/large/008eGmZEgy1goqud2ewdhj31h00f20wc.jpg" alt="kingshard 启动界面"></p>
+<h3 id="peewee">peewee</h3>
+<p>peewee 的配置就自己领会了，这里给出一部分配置:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="n">PW_DB_URL</span> <span class="o">=</span> <span class="s2">&#34;mysql+pool://root:toor333666@kingshard:9696&#34;</span>
+<span class="n">PW_CONN_PARAMS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&#34;max_connections&#34;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&#34;database&#34;</span><span class="p">:</span> <span class="s2">&#34;cas&#34;</span><span class="p">,</span> <span class="s2">&#34;charset&#34;</span><span class="p">:</span> <span class="s2">&#34;utf8mb4&#34;</span><span class="p">}</span>
+<span class="n">PW_STALE_TIMEOUT</span> <span class="o">=</span> <span class="mi">14400</span>
+</code></pre></div><p>测试用的 model 定义:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pendulum</span>
+
+<span class="k">class</span> <span class="nc">Test</span><span class="p">(</span><span class="n">pw</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">BigIntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">idgen</span><span class="o">.</span><span class="n">get_sequence</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">BigIntegerField</span><span class="p">()</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">SmallIntegerField</span><span class="p">()</span>
+    <span class="n">created_at</span> <span class="o">=</span> <span class="n">DatetimeTZField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">updated_at</span> <span class="o">=</span> <span class="n">DatetimeTZField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">table_name</span> <span class="o">=</span> <span class="s2">&#34;test&#34;</span>
+</code></pre></div><p>提前创建好所有分表:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">64</span><span class="p">):</span>
+    <span class="c1"># shard 是一个 sql 注释，kingshard 会根据这个注释决定 sql 被发往哪个节点执行</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">32</span><span class="p">:</span>
+        <span class="n">shard</span> <span class="o">=</span> <span class="s2">&#34;/*cas-node-1*/&#34;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">shard</span> <span class="o">=</span> <span class="s2">&#34;/*cas-node-2*/&#34;</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">pwa</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">execute_sql</span><span class="p">(</span>
+        <span class="n">f</span><span class="s2">&#34;{shard}CREATE TABLE test_{str(i).zfill(4)} (&#34;</span>
+        <span class="n">f</span><span class="s2">&#34;created_at datetime(6) NOT NULL,&#34;</span>
+        <span class="n">f</span><span class="s2">&#34;updated_at datetime(6) NOT NULL,&#34;</span>
+        <span class="n">f</span><span class="s2">&#34;id bigint(20) NOT NULL,&#34;</span>
+        <span class="n">f</span><span class="s2">&#34;user_id bigint(20) NOT NULL,&#34;</span>
+        <span class="n">f</span><span class="s2">&#34;status smallint(6) NOT NULL,&#34;</span>
+        <span class="n">f</span><span class="s2">&#34;PRIMARY KEY (id),&#34;</span>
+        <span class="n">f</span><span class="s2">&#34;UNIQUE KEY test_id (id),&#34;</span>
+        <span class="n">f</span><span class="s2">&#34;UNIQUE KEY test_user_id (user_id)&#34;</span>
+        <span class="s2">&#34;) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4&#34;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+</code></pre></div><p>跑完之后可以连对应 mysql 节点看一下表是否创建好:</p>
+<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">show</span> <span class="n">databases</span><span class="p">;</span>
+<span class="n">use</span> <span class="n">cas</span><span class="p">;</span>
+<span class="k">show</span> <span class="n">tables</span><span class="p">;</span>
+</code></pre></div><p>至此，整套环境搭建流程就跑通了。</p>
+<h2 id="问题验证">问题验证</h2>
+<p>我们今天要验证的问题是 peewee 在连接 kingshard 的情况下，是否可以运行跨节点的批量 insert 语句。
+之所以要验证这个，是因为实际业务中经常会有批量创建的需求，所以我在做某个需求时用 peewee 写的 insert_many 逻辑在代码评审时被提了 comment。
+其实按 kingshard 文档看应该是支持的，不过考虑到之前某个业务用 peewee 连 kingshard 时出了一些奇奇怪怪的<a href="https://blog.leosocy.top/posts/98f0/">问题</a>，所以为了避免线上出 bug，还是得先验证一下，这里我归纳了两个需要验证的点:</p>
+<ol>
+<li>跨节点 insert 是否支持？</li>
+<li>若支持，运行时是否支持自动分片，还是需要一条一条的 insert ？</li>
+</ol>
+<h3 id="跨节点操作是否支持">跨节点操作是否支持</h3>
+<p>先简单测一下跨节点操作</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 去所有节点查询总数</span>
+<span class="n">Test</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">pw</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="n">COUNT</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+<span class="c1"># 报错: transaction in multi node</span>
+<span class="n">peewee</span><span class="o">.</span><span class="n">OperationalError</span><span class="p">:</span> <span class="p">(</span><span class="mi">1105</span><span class="p">,</span> <span class="s1">&#39;transaction in multi node&#39;</span><span class="p">)</span>
+
+<span class="c1"># user_id 模 64 分的表，所以这几个数据会发往节点 1 中 1、2 这两张表和节点 2 中 34 这张表</span>
+<span class="n">Test</span><span class="o">.</span><span class="n">insert_many</span><span class="p">([{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span> <span class="mi">65</span><span class="p">,</span> <span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">0</span><span class="p">},{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">},{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">},{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span><span class="mi">34</span><span class="p">,</span><span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">}])</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="c1"># 很不幸，也失败了</span>
+<span class="n">peewee</span><span class="o">.</span><span class="n">OperationalError</span><span class="p">:</span> <span class="p">(</span><span class="mi">1105</span><span class="p">,</span> <span class="s1">&#39;transaction in multi node&#39;</span><span class="p">)</span>
+</code></pre></div><p>可以看到，因为事务跨节点了，所以执行失败，这里注意一下，kingshard 支持的所有跨节点操作都是非事务性质的。</p>
+<blockquote>
+<p>跨节点的事务那就是分布式事务解决方案要考虑的问题了，这里就不多讲了。</p>
+</blockquote>
+<p>导致这个报错的原因是，peewee 默认情况下 autocommit 选项是关掉的，在下面这几种情况下会出现：</p>
+<ol>
+<li>经过 kingshard 计算 user_id ，sql 会发往不同节点，而在同一个事务下，这是不支持的</li>
+<li>前一个 sql 报错，在当前事务中没有回滚，导致后续发往其它节点的 sql 也报错</li>
+</ol>
+<p>更详细的解释可以看这篇<a href="https://blog.leosocy.top/posts/98f0/">博客</a>，前同事踩下的坑，留下的记录。</p>
+<p>知道了原因，我们就可以把 autocommit 设置成 1 就好了，设置也有两种方式：
+1）临时性设置</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 在你自己的 peewee db 上运行这些命令就可以了</span>
+<span class="n">db</span><span class="o">.</span><span class="n">connect_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="n">db</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<span class="n">Test</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+</code></pre></div><p>2）继承 <code>PooledMySQLDatabase</code> 类，并重写 <code>_connect</code> 方法，传入 <code>autocommit=True</code></p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">playhouse.db_url</span> <span class="kn">import</span> <span class="n">register_database</span>
+<span class="kn">from</span> <span class="nn">playhouse.pool</span> <span class="kn">import</span> <span class="n">PooledMySQLDatabase</span>
+
+
+<span class="k">class</span> <span class="nc">PooledMySQLAutoCommitDatabase</span><span class="p">(</span><span class="n">PooledMySQLDatabase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PooledMySQLAutoCommitDatabase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span>
+        <span class="n">conn</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&#34;SET AUTOCOMMIT = 1;&#34;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">conn</span>
+
+<span class="c1"># 在项目初始化的钩子中调用，比如 flask app 里的 init 方法</span>
+<span class="k">def</span> <span class="nf">register_autocommit</span><span class="p">():</span>
+    <span class="n">register_database</span><span class="p">(</span><span class="n">PooledMySQLAutoCommitDatabase</span><span class="p">,</span> <span class="s2">&#34;mysql+pool+autocommit&#34;</span><span class="p">)</span>
+</code></pre></div><p>重新连接 kingshard，可以看到 autocommit 已经设置成功:
+<img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gorhshlmhtj31gw0g2ae1.jpg" alt=""></p>
+<h3 id="跨节点-insert">跨节点 insert</h3>
+<p>来测试一下今天的主角:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">Test</span><span class="o">.</span><span class="n">insert_many</span><span class="p">([{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span> <span class="mi">65</span><span class="p">,</span> <span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">0</span><span class="p">},{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">},{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">},{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span><span class="mi">34</span><span class="p">,</span><span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">}])</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="mi">4</span>
+</code></pre></div><p>插入成功了，那么我们再去 kingshard 日志看一下，是否和我们期望的一样，自动确认好分片，并且在各自分片上批量插入，还是只能一条一条的插入:</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">2021/03/20 19:12:44 - OK - 14.4ms - 127.0.0.1:52406-&gt;127.0.0.1:3307:insert  into test_0002<span class="o">(</span>id, created_at, updated_at, user_id, status<span class="o">)</span> values <span class="o">(</span>3325099002548728, <span class="s1">&#39;2021-03-20 11:12:44.083098&#39;</span>, <span class="s1">&#39;2021-03-20 11:12:44.083150&#39;</span>, 2, 1<span class="o">)</span>
+2021/03/20 19:12:44 - OK - 37.6ms - 127.0.0.1:52406-&gt;127.0.0.1:3307:insert  into test_0001<span class="o">(</span>id, created_at, updated_at, user_id, status<span class="o">)</span> values <span class="o">(</span>3325099002483190, <span class="s1">&#39;2021-03-20 11:12:44.080854&#39;</span>, <span class="s1">&#39;2021-03-20 11:12:44.080895&#39;</span>, 65, 0<span class="o">)</span>, <span class="o">(</span>3325099002515959, <span class="s1">&#39;2021-03-20 11:12:44.081941&#39;</span>, <span class="s1">&#39;2021-03-20 11:12:44.081998&#39;</span>, 1, 1<span class="o">)</span>
+2021/03/20 19:12:44 - OK - 53.4ms - 127.0.0.1:52406-&gt;127.0.0.1:3308:insert  into test_0034<span class="o">(</span>id, created_at, updated_at, user_id, status<span class="o">)</span> values <span class="o">(</span>3325099002614265, <span class="s1">&#39;2021-03-20 11:12:44.084557&#39;</span>, <span class="s1">&#39;2021-03-20 11:12:44.084613&#39;</span>, 34, 1<span class="o">)</span>
+</code></pre></div><p>可以看到，kingshard 是可以自动确认分片，并且在各自分片上执行批量 insert 的，省事了，其实我已经做好改造代码，在代码里手动确认分片的准备了，kingshard 真香！</p>
+<p>再来验证一下数量，成功执行了:</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">Test</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">pw</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="n">COUNT</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
+<span class="mi">4</span>
+
+<span class="c1"># 测一下跨节点的批量删除</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Test</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Test</span><span class="o">.</span><span class="n">user_id</span><span class="o">.</span><span class="n">in_</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">34</span><span class="p">,</span><span class="mi">65</span><span class="p">]))</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="mi">4</span>
+</code></pre></div><h1 id="参考">参考</h1>
+<ol>
+<li><a href="https://blog.leosocy.top/posts/98f0/">使用kingshard + peewee过程中遇到的一些“坑”</a></li>
+<li><a href="https://github.com/flike/kingshard/blob/master/README_ZH.md">kingshard 官方文档</a></li>
+<li><a href="https://www.osgeo.cn/peewee/peewee/querying.html#bulk-inserts">peewee 非官方中文文档</a></li>
+</ol></div>
+                    <div class="post_footer">
+                        
+                        <div class="meta">
+                            <div class="info">
+                                <span class="field tags">
+                                    <i class="ri-stack-line"></i>
+                                    
+                                    <a href="https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/">踩坑记录</a>
+                                    
+                                </span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                
+                
+<div class="doc_comments">
+	<div id="gitalk-container"></div>
+</div>
+<link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<script type="text/javascript">
+let gitalk = new Gitalk({
+  clientID: '946e62e1049edfb63fd7',
+  clientSecret: 'ea3d0fcb9025fb88bd8dd50742bcf43dacd6af34',
+  repo: 'hj24.github.io',
+  owner: 'hj24',
+  admin: ['hj24'],
+  id: '2021-03-21 15:27:28 \x2b0800 CST',      
+  distractionFreeMode: false,  
+  title : 'Peewee连接kingshard时支持批量insert吗',
+  labels : []
+});
+gitalk.render('gitalk-container')
+</script>
+                
+            </div>
+        </div>
+    </div>
+    <a id="back_to_top" href="#" class="back_to_top"><i class="ri-arrow-up-s-line"></i></a>
+    <footer class="footer">
+    <div class="powered_by">
+        <a href="https://varkai.com">Designed by VarKai,</a>
+        <a href="http://www.gohugo.io/">Proudly published with Hugo</a>
+    </div>
+
+    <div class="footer_slogan">
+        <span>hj24&#39;s life log</span>
+    </div>
+</footer>
+    <script src="https://hj24.life/js/jquery-3.5.1.min.js"></script>
+<link href="https://hj24.life/css/fancybox.min.css" rel="stylesheet">
+<script src="https://hj24.life/js/fancybox.min.js"></script>
+<script src="https://hj24.life/js/zozo.js"></script>
+
+
+<script type="text/javascript" async
+    src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                TeX: {
+                    equationNumbers: { autoNumber: "AMS" },
+                    extensions: ["AMSmath.js", "AMSsymbols.js"]
+                }
+            }
+        });
+
+        MathJax.Hub.Queue(function () {
+            
+            
+            
+            var all = MathJax.Hub.getAllJax(), i;
+            for (i = 0; i < all.length; i += 1) {
+                all[i].SourceElement().parentNode.className += ' has-jax';
+            }
+        });
+    </script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+
+
+
+</body>
+
+</html>
