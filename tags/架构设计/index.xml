@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>架构设计 on 客舟听雨</title>
+    <link>https://hj24.life/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/</link>
+    <description>Recent content in 架构设计 on 客舟听雨</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <lastBuildDate>Sun, 25 Jul 2021 19:24:01 +0800</lastBuildDate><atom:link href="https://hj24.life/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>聊聊OSS和CDN架构</title>
+      <link>https://hj24.life/posts/%E8%81%8A%E8%81%8Aoss%E5%92%8Ccdn%E6%9E%B6%E6%9E%84/</link>
+      <pubDate>Sun, 25 Jul 2021 19:24:01 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/%E8%81%8A%E8%81%8Aoss%E5%92%8Ccdn%E6%9E%B6%E6%9E%84/</guid>
+      <description>&lt;p&gt;这片文章会讲讲 OSS &amp;amp; CDN 在扇贝的应用，并介绍一下业内常用的 OSS &amp;amp; CDN 架构，所有内容均已脱敏处理。
+照例放一下大纲:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;OSS/CDN 是什么？&lt;/li&gt;
+&lt;li&gt;为什么需要它们？&lt;/li&gt;
+&lt;li&gt;扇贝 OSS 梳理&lt;/li&gt;
+&lt;li&gt;扇贝 CDN 梳理&lt;/li&gt;
+&lt;/ol&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

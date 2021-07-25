@@ -105,6 +105,41 @@
 
 <div class="post animated fadeInDown">
     <div class="post_title">
+        <h2><a href='/posts/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8Bflask%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84/'>从源码看flask是如何保证线程安全的</a></h2>
+    </div>
+    
+    <div class="list">
+        <div class="post_content markdown">
+            <p><meta name="referrer" content="no-referrer" />
+之前粗略的看过flask的文档，知道了它是线程安全的，大概是通过维护了一个以线程ID (在 Greenlet 可用的情况下优先使用 Greenlet 的 ID，因此协程也是一样的)为键的字典，里面放了分配给这个线程的资源来做到线程隔离，以此实现线程安全的目的。
+<p>写这篇博客是因为之前有个同事问我他写了个全局变量，在flask里是线程安全的吗？
+当时没过脑子，直接回答了是，现在想想&hellip;应该是把他坑了</p>
+<p>为了彻底弄明白这个问题，我搜了很多知乎，stackoverflow，reddit的问答，还有一些博客，也看了一遍相关的源码，最后写下这篇博客，做个记录。</p></p>
+        </div>
+    </div>
+    
+    <div class="post_footer">
+        <div class="meta">
+            <div class="info">
+                <span class="field">
+                    <i class="ri-map-pin-time-line"></i>
+                    <span class="date">2020.03.02</span>
+                </span>
+                
+                <span class="field tags">
+                    <i class="ri-stack-line"></i>
+                    
+                    <a href="https://hj24.life/tags/python/">Python</a>
+                    
+                </span>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="post animated fadeInDown">
+    <div class="post_title">
         <h2><a href='/posts/gitlab-ci-cd%E6%8C%87%E5%8C%97/'>Gitlab CI CD指北</a></h2>
     </div>
     
@@ -290,39 +325,6 @@ pip install =&gt; docker build</p>
                     <i class="ri-stack-line"></i>
                     
                     <a href="https://hj24.life/tags/things-i-dont-know/">Things I don&#39;t know</a>
-                    
-                </span>
-                
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="post animated fadeInDown">
-    <div class="post_title">
-        <h2><a href='/posts/%E5%A6%82%E4%BD%95%E5%8F%91%E5%B8%83%E8%87%AA%E5%B7%B1%E7%9A%84python%E5%BA%93/'>如何发布自己的Python库</a></h2>
-    </div>
-    
-    <div class="list">
-        <div class="post_content markdown">
-            <p><meta name="referrer" content="no-referrer" />
-<h2 id="前言与简介">前言与简介</h2>
-<p>我想任何一个有追求的Python开发者在度过基础阶段后都想过发布自己的库，也就是我们常说的造轮子，这是成为一个成熟Python开发者的第一步，在造轮子的过程中，无论是自己的编程能力还是为以后给开源项目贡献代码的能力都会得到很大提升。今天这篇博客，就来带大家从0开始，向PyPI贡献自己的开源库。</p></p>
-        </div>
-    </div>
-    
-    <div class="post_footer">
-        <div class="meta">
-            <div class="info">
-                <span class="field">
-                    <i class="ri-map-pin-time-line"></i>
-                    <span class="date">2019.08.15</span>
-                </span>
-                
-                <span class="field tags">
-                    <i class="ri-stack-line"></i>
-                    
-                    <a href="https://hj24.life/tags/python/">Python</a>
                     
                 </span>
                 
