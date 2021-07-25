@@ -12,7 +12,7 @@
 	
     
     
-    <meta name="description" content="东拼西凑，存一些常用的代码片，持续更新 MySQL 找出所有执行时间超过 5 分钟的线程，拼凑出 kill 语句，方便后面查杀 SELECT CONCAT(&amp;#39;kill &amp;#39;, id, &amp;#39;;&amp;#39;) FROM information_schema.processlist WHERE Command != &amp;#39;Sleep&amp;#39; AND Time &amp;gt; 300 ORDER BY Time DESC; Shell 截取有固定格式的长文本的第 n 列 cat example.txt|awk &amp;#39;{print $n}&amp;#39;" />
+    <meta name="description" content="东拼西凑，存一些常用的代码片，持续更新 MySQL 找出所有执行时间超过 5 分钟的线程，拼凑出 kill 语句，方便后面查杀 SELECTCONCAT(&amp;#39;kill &amp;#39;,id,&amp;#39;;&amp;#39;)FROMinformation_schema.processlistWHERECommand!=&amp;#39;Sleep&amp;#39;ANDTime&amp;gt;300ORDERBYTimeDESC;Shell 截取有固定格式的长文本的第 n 列 cat example.txt|awk &amp;#39;{print $n}&amp;#39;" />
     
 
     
@@ -107,12 +107,12 @@
                     <div class="post_content markdown"><p>东拼西凑，存一些常用的代码片，持续更新</p>
 <h1 id="mysql">MySQL</h1>
 <p>找出所有执行时间超过 5 分钟的线程，拼凑出 kill 语句，方便后面查杀</p>
-<div class="highlight"><pre class="chroma"><code class="language-mysql" data-lang="mysql"><span class="k">SELECT</span> <span class="nf">CONCAT</span><span class="p">(</span><span class="s1">&#39;kill &#39;</span><span class="p">,</span> <span class="n">id</span><span class="p">,</span> <span class="s1">&#39;;&#39;</span><span class="p">)</span>
-<span class="k">FROM</span> <span class="n">information_schema</span><span class="p">.</span><span class="n">processlist</span>
-<span class="k">WHERE</span> <span class="n">Command</span> <span class="o">!=</span> <span class="s1">&#39;Sleep&#39;</span>
-	<span class="k">AND</span> <span class="kt">Time</span> <span class="o">&gt;</span> <span class="mi">300</span>
-<span class="k">ORDER</span> <span class="k">BY</span> <span class="kt">Time</span> <span class="k">DESC</span><span class="p">;</span>
-</code></pre></div><h1 id="shell">Shell</h1>
+<div class="highlight"><pre class="chroma"><code class="language-mysql" data-lang="mysql"><span class="k">SELECT</span><span class="w"> </span><span class="nf">CONCAT</span><span class="p">(</span><span class="s1">&#39;kill &#39;</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;;&#39;</span><span class="p">)</span><span class="w">
+</span><span class="w"></span><span class="k">FROM</span><span class="w"> </span><span class="n">information_schema</span><span class="p">.</span><span class="n">processlist</span><span class="w">
+</span><span class="w"></span><span class="k">WHERE</span><span class="w"> </span><span class="n">Command</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;Sleep&#39;</span><span class="w">
+</span><span class="w">	</span><span class="k">AND</span><span class="w"> </span><span class="kt">Time</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">300</span><span class="w">
+</span><span class="w"></span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="kt">Time</span><span class="w"> </span><span class="k">DESC</span><span class="p">;</span><span class="w">
+</span></code></pre></div><h1 id="shell">Shell</h1>
 <p>截取有固定格式的长文本的第 n 列</p>
 <div class="highlight"><pre class="chroma"><code class="language-shell" data-lang="shell">cat example.txt<span class="p">|</span>awk <span class="s1">&#39;{print $n}&#39;</span>
 </code></pre></div></div>
@@ -136,7 +136,7 @@ let gitalk = new Gitalk({
   repo: 'hj24.github.io',
   owner: 'hj24',
   admin: ['hj24'],
-  id: '2020-11-14 19:23:04 \x2b0800 CST',      
+  id: '2020-11-14 19:23:04 \u002b0800 CST',      
   distractionFreeMode: false,  
   title : 'Snippets',
   labels : []

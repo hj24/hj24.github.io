@@ -187,12 +187,12 @@
 <p>注：生产环境 Mysql 升级到了 4C16G，买的时候直接看了之前压测的文档，没有核对，但从压测效果来看还不错，所以理论上升级过后的线上数据库能抗住更大一点的压力。</p>
 <h3 id="sbayuser-项目">sbayuser 项目</h3>
 <p>服务启动配置和线上基本保持一致，在 it 环境，gunicorn 以 gthread 模型启动，共 20 个 pod（线上是 25 个），pod 配置如下：</p>
-<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="k">limits</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="k">cpu</span><span class="p">:</span><span class="w"> </span>1300m<span class="w">
-</span><span class="w">    </span><span class="k">memory</span><span class="p">:</span><span class="w"> </span>600Mi<span class="w">
-</span><span class="w"></span><span class="k">requests</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="k">cpu</span><span class="p">:</span><span class="w"> </span>400m<span class="w">
-</span><span class="w">    </span><span class="k">memory</span><span class="p">:</span><span class="w"> </span>300Mi<span class="w">
+<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">limits</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="l">1300m</span><span class="w">
+</span><span class="w">    </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="l">600Mi</span><span class="w">
+</span><span class="w"></span><span class="nt">requests</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="l">400m</span><span class="w">
+</span><span class="w">    </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="l">300Mi</span><span class="w">
 </span></code></pre></div><p><strong>注：gthread  + 20 个 pod 这个配置在上一次压测可以扛住 30x+ 写请求的 qps，作为参考，备考上一次事故写请求 qps 到 10x+ 左右服务就挂了，并且目前线上一直是以这个模式运行服务，因此本次压测延用这些配置。</strong></p>
 <h3 id="sbayuser-stub-项目">sbayuser-stub 项目</h3>
 <p>起这个服务的理由见上方的方案，stub 服务会起在 it 环境，使用 gevent 模式起一个可以扛住较大并发的 flask 项目，用于模拟 sbayuser 与微信交互，假微信会立即响应随机值，主要是随机响应 union_id。</p>
@@ -214,152 +214,152 @@
 <span class="n">threads</span> <span class="o">=</span> <span class="mi">4</span>
 <span class="n">keepalive</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&#34;KEEPALIVE_TIMEOUT&#34;</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
 </code></pre></div><p>pod 配置如下：</p>
-<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="k">limits</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="k">cpu</span><span class="p">:</span><span class="w"> </span>1200m<span class="w">
-</span><span class="w">    </span><span class="k">memory</span><span class="p">:</span><span class="w"> </span>800Mi<span class="w">
-</span><span class="w"></span><span class="k">requests</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="k">cpu</span><span class="p">:</span><span class="w"> </span>400m<span class="w">
-</span><span class="w">    </span><span class="k">memory</span><span class="p">:</span><span class="w"> </span>300Mi<span class="w">
+<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">limits</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="l">1200m</span><span class="w">
+</span><span class="w">    </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="l">800Mi</span><span class="w">
+</span><span class="w"></span><span class="nt">requests</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="l">400m</span><span class="w">
+</span><span class="w">    </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="l">300Mi</span><span class="w">
 </span></code></pre></div><p>从 envoy 的监控可以看到，qps 可以到 80x+：
 <img src="https://tva1.sinaimg.cn/large/008eGmZEly1gnktakxp6sj30kq0ai3zb.jpg" alt="sbayuser-stub qps"></p>
 <h3 id="kingshard">kingshard</h3>
 <p>因为 it 环境没有做分库分表的事，所以从线上同步回来数据之后需要起一个 kingshard，下面直接给一个 yaml 示例，你只需要替换文件中 <code>{{}}</code> （注意： <code>{{}} != {}</code>）然后直接 apply 即可：</p>
-<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="k">apiVersion</span><span class="p">:</span><span class="w"> </span>v1<span class="w">
-</span><span class="w"></span><span class="k">kind</span><span class="p">:</span><span class="w"> </span>ConfigMap<span class="w">
-</span><span class="w"></span><span class="k">metadata</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="k">name</span><span class="p">:</span><span class="w"> </span>sbayuser-it-config<span class="w">
-</span><span class="w">  </span><span class="k">namespace</span><span class="p">:</span><span class="w"> </span>rds<span class="w">
-</span><span class="w"></span><span class="k">data</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="k">ks.yaml</span><span class="p">:</span><span class="w"> </span><span class="sd">|
-</span><span class="sd">    addr: 0.0.0.0:3306</span><span class="w">
-</span><span class="w">    </span><span class="k">user_list</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span>- <span class="k">user</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">        </span><span class="k">password</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">    </span><span class="k">log_sql</span><span class="p">:</span><span class="w"> </span>on<span class="w">
-</span><span class="w">    </span><span class="k">slow_log_time</span><span class="p">:</span><span class="w"> </span><span class="m">100</span><span class="w">
-</span><span class="w">    </span><span class="k">proxy_charset</span><span class="p">:</span><span class="w"> </span>utf8mb4<span class="w">
-</span><span class="w">    </span><span class="k">nodes</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- <span class="k">name</span><span class="p">:</span><span class="w"> </span>sbayuser-node<span class="m">-1</span><span class="w">
-</span><span class="w">      </span><span class="k">master</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">      </span><span class="k">user</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">      </span><span class="k">password</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">      </span><span class="k">down_after_noalive</span><span class="p">:</span><span class="w"> </span><span class="m">300</span><span class="w">
-</span><span class="w">      </span><span class="k">max_conns_limit</span><span class="p">:</span><span class="w"> </span><span class="m">128</span><span class="w">
-</span><span class="w">    </span>- <span class="k">name</span><span class="p">:</span><span class="w"> </span>sbayuser-node<span class="m">-2</span><span class="w">
-</span><span class="w">      </span><span class="k">master</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">      </span><span class="k">user</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">      </span><span class="k">password</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">      </span><span class="k">down_after_noalive</span><span class="p">:</span><span class="w"> </span><span class="m">300</span><span class="w">
-</span><span class="w">      </span><span class="k">max_conns_limit</span><span class="p">:</span><span class="w"> </span><span class="m">128</span><span class="w">
-</span><span class="w">    </span>- <span class="k">name</span><span class="p">:</span><span class="w"> </span>sbayuser-default<span class="w">
-</span><span class="w">      </span><span class="k">master</span><span class="p">:</span><span class="w"> </span>db-mysql.rds<span class="p">:</span><span class="m">3306</span><span class="w">
-</span><span class="w">      </span><span class="k">user</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">      </span><span class="k">password</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">      </span><span class="k">down_after_noalive</span><span class="p">:</span><span class="w"> </span><span class="m">300</span><span class="w">
-</span><span class="w">      </span><span class="k">max_conns_limit</span><span class="p">:</span><span class="w"> </span><span class="m">128</span><span class="w">
-</span><span class="w">    </span><span class="k">schema_list</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- <span class="k">user</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">      </span><span class="k">nodes</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span>- sbayuser-node<span class="m">-1</span><span class="w">
-</span><span class="w">      </span>- sbayuser-node<span class="m">-2</span><span class="w">
-</span><span class="w">      </span>- sbayuser-default<span class="w">
-</span><span class="w">      </span><span class="k">default</span><span class="p">:</span><span class="w"> </span>sbayuser-default<span class="w">
-</span><span class="w">      </span><span class="k">shard</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span>- <span class="k">db</span><span class="p">:</span><span class="w"> </span>sbayuser<span class="w">
-</span><span class="w">        </span><span class="k">table</span><span class="p">:</span><span class="w"> </span>susers<span class="w">
-</span><span class="w">        </span><span class="k">key</span><span class="p">:</span><span class="w"> </span>id<span class="w">
-</span><span class="w">        </span><span class="k">nodes</span><span class="p">:</span><span class="w">
-</span><span class="w">        </span>- sbayuser-node<span class="m">-1</span><span class="w">
-</span><span class="w">        </span>- sbayuser-node<span class="m">-2</span><span class="w">
-</span><span class="w">        </span><span class="k">type</span><span class="p">:</span><span class="w"> </span>hash<span class="w">
-</span><span class="w">        </span><span class="k">locations</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="m">32</span><span class="p">,</span><span class="w"> </span><span class="m">32</span><span class="p">]</span><span class="w">
-</span><span class="w">      </span>- <span class="k">db</span><span class="p">:</span><span class="w"> </span>sbayuser<span class="w">
-</span><span class="w">        </span><span class="k">table</span><span class="p">:</span><span class="w"> </span>suser_socials<span class="w">
-</span><span class="w">        </span><span class="k">key</span><span class="p">:</span><span class="w"> </span>user_id<span class="w">
-</span><span class="w">        </span><span class="k">nodes</span><span class="p">:</span><span class="w">
-</span><span class="w">        </span>- sbayuser-node<span class="m">-1</span><span class="w">
-</span><span class="w">        </span>- sbayuser-node<span class="m">-2</span><span class="w">
-</span><span class="w">        </span><span class="k">type</span><span class="p">:</span><span class="w"> </span>hash<span class="w">
-</span><span class="w">        </span><span class="k">locations</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="m">32</span><span class="p">,</span><span class="w"> </span><span class="m">32</span><span class="p">]</span><span class="w">
-</span><span class="w">      </span>- <span class="k">db</span><span class="p">:</span><span class="w"> </span>sbayuser<span class="w">
-</span><span class="w">        </span><span class="k">table</span><span class="p">:</span><span class="w"> </span>swechat_users<span class="w">
-</span><span class="w">        </span><span class="k">key</span><span class="p">:</span><span class="w"> </span>user_id<span class="w">
-</span><span class="w">        </span><span class="k">nodes</span><span class="p">:</span><span class="w">
-</span><span class="w">        </span>- sbayuser-node<span class="m">-1</span><span class="w">
-</span><span class="w">        </span>- sbayuser-node<span class="m">-2</span><span class="w">
-</span><span class="w">        </span><span class="k">type</span><span class="p">:</span><span class="w"> </span>hash<span class="w">
-</span><span class="w">        </span><span class="k">locations</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="m">32</span><span class="p">,</span><span class="w"> </span><span class="m">32</span><span class="p">]</span><span class="w">
-</span><span class="w">      </span>- <span class="k">db</span><span class="p">:</span><span class="w"> </span>sbayuser<span class="w">
-</span><span class="w">        </span><span class="k">table</span><span class="p">:</span><span class="w"> </span>sqq_users<span class="w">
-</span><span class="w">        </span><span class="k">key</span><span class="p">:</span><span class="w"> </span>user_id<span class="w">
-</span><span class="w">        </span><span class="k">nodes</span><span class="p">:</span><span class="w">
-</span><span class="w">        </span>- sbayuser-node<span class="m">-1</span><span class="w">
-</span><span class="w">        </span>- sbayuser-node<span class="m">-2</span><span class="w">
-</span><span class="w">        </span><span class="k">type</span><span class="p">:</span><span class="w"> </span>hash<span class="w">
-</span><span class="w">        </span><span class="k">locations</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="m">32</span><span class="p">,</span><span class="w"> </span><span class="m">32</span><span class="p">]</span><span class="w">
-</span><span class="w"></span>---<span class="w">
-</span><span class="w"></span><span class="k">apiVersion</span><span class="p">:</span><span class="w"> </span>apps/v1<span class="w">
-</span><span class="w"></span><span class="k">kind</span><span class="p">:</span><span class="w"> </span>Deployment<span class="w">
-</span><span class="w"></span><span class="k">metadata</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="k">name</span><span class="p">:</span><span class="w"> </span>sbayuser-it<span class="w">
-</span><span class="w">  </span><span class="k">namespace</span><span class="p">:</span><span class="w"> </span>rds<span class="w">
-</span><span class="w"></span><span class="k">spec</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="k">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">6</span><span class="w">
-</span><span class="w">  </span><span class="k">selector</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="k">matchLabels</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span><span class="k">app</span><span class="p">:</span><span class="w"> </span>kingshard<span class="w">
-</span><span class="w">      </span><span class="k">instance</span><span class="p">:</span><span class="w"> </span>sbayuser-it<span class="w">
-</span><span class="w">  </span><span class="k">template</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="k">metadata</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span><span class="k">labels</span><span class="p">:</span><span class="w">
-</span><span class="w">        </span><span class="k">app</span><span class="p">:</span><span class="w"> </span>kingshard<span class="w">
-</span><span class="w">        </span><span class="k">instance</span><span class="p">:</span><span class="w"> </span>sbayuser-it<span class="w">
-</span><span class="w">    </span><span class="k">spec</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span><span class="k">containers</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span>- <span class="k">name</span><span class="p">:</span><span class="w"> </span>kingshard<span class="w">
-</span><span class="w">        </span><span class="k">resources</span><span class="p">:</span><span class="w">
-</span><span class="w">          </span><span class="k">limits</span><span class="p">:</span><span class="w">
-</span><span class="w">            </span><span class="k">cpu</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;1100m&#34;</span><span class="w">
-</span><span class="w">            </span><span class="k">memory</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;600Mi&#34;</span><span class="w">
-</span><span class="w">          </span><span class="k">requests</span><span class="p">:</span><span class="w">
-</span><span class="w">            </span><span class="k">cpu</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;400m&#34;</span><span class="w">
-</span><span class="w">            </span><span class="k">memory</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;300Mi&#34;</span><span class="w">
-</span><span class="w">        </span><span class="k">image</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
-</span><span class="w">        </span><span class="k">imagePullPolicy</span><span class="p">:</span><span class="w"> </span>IfNotPresent<span class="w">
-</span><span class="w">        </span><span class="k">command</span><span class="p">:</span><span class="w">
+<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ConfigMap</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">sbayuser-it-config</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">rds</span><span class="w">
+</span><span class="w"></span><span class="nt">data</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">ks.yaml</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span><span class="sd">    addr: 0.0.0.0:3306
+</span><span class="sd">    user_list:
+</span><span class="sd">      - user: {{}}
+</span><span class="sd">        password: {{}}
+</span><span class="sd">    log_sql: on
+</span><span class="sd">    slow_log_time: 100
+</span><span class="sd">    proxy_charset: utf8mb4
+</span><span class="sd">    nodes:
+</span><span class="sd">    - name: sbayuser-node-1
+</span><span class="sd">      master: {{}}
+</span><span class="sd">      user: {{}}
+</span><span class="sd">      password: {{}}
+</span><span class="sd">      down_after_noalive: 300
+</span><span class="sd">      max_conns_limit: 128
+</span><span class="sd">    - name: sbayuser-node-2
+</span><span class="sd">      master: {{}}
+</span><span class="sd">      user: {{}}
+</span><span class="sd">      password: {{}}
+</span><span class="sd">      down_after_noalive: 300
+</span><span class="sd">      max_conns_limit: 128
+</span><span class="sd">    - name: sbayuser-default
+</span><span class="sd">      master: db-mysql.rds:3306
+</span><span class="sd">      user: {{}}
+</span><span class="sd">      password: {{}}
+</span><span class="sd">      down_after_noalive: 300
+</span><span class="sd">      max_conns_limit: 128
+</span><span class="sd">    schema_list:
+</span><span class="sd">    - user: {{}}
+</span><span class="sd">      nodes:
+</span><span class="sd">      - sbayuser-node-1
+</span><span class="sd">      - sbayuser-node-2
+</span><span class="sd">      - sbayuser-default
+</span><span class="sd">      default: sbayuser-default
+</span><span class="sd">      shard:
+</span><span class="sd">      - db: sbayuser
+</span><span class="sd">        table: susers
+</span><span class="sd">        key: id
+</span><span class="sd">        nodes:
+</span><span class="sd">        - sbayuser-node-1
+</span><span class="sd">        - sbayuser-node-2
+</span><span class="sd">        type: hash
+</span><span class="sd">        locations: [32, 32]
+</span><span class="sd">      - db: sbayuser
+</span><span class="sd">        table: suser_socials
+</span><span class="sd">        key: user_id
+</span><span class="sd">        nodes:
+</span><span class="sd">        - sbayuser-node-1
+</span><span class="sd">        - sbayuser-node-2
+</span><span class="sd">        type: hash
+</span><span class="sd">        locations: [32, 32]
+</span><span class="sd">      - db: sbayuser
+</span><span class="sd">        table: swechat_users
+</span><span class="sd">        key: user_id
+</span><span class="sd">        nodes:
+</span><span class="sd">        - sbayuser-node-1
+</span><span class="sd">        - sbayuser-node-2
+</span><span class="sd">        type: hash
+</span><span class="sd">        locations: [32, 32]
+</span><span class="sd">      - db: sbayuser
+</span><span class="sd">        table: sqq_users
+</span><span class="sd">        key: user_id
+</span><span class="sd">        nodes:
+</span><span class="sd">        - sbayuser-node-1
+</span><span class="sd">        - sbayuser-node-2
+</span><span class="sd">        type: hash
+</span><span class="sd">        locations: [32, 32]</span><span class="w">    
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">apps/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Deployment</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">sbayuser-it</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">rds</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="m">6</span><span class="w">
+</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">matchLabels</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">kingshard</span><span class="w">
+</span><span class="w">      </span><span class="nt">instance</span><span class="p">:</span><span class="w"> </span><span class="l">sbayuser-it</span><span class="w">
+</span><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">kingshard</span><span class="w">
+</span><span class="w">        </span><span class="nt">instance</span><span class="p">:</span><span class="w"> </span><span class="l">sbayuser-it</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">kingshard</span><span class="w">
+</span><span class="w">        </span><span class="nt">resources</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">limits</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;1100m&#34;</span><span class="w">
+</span><span class="w">            </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;600Mi&#34;</span><span class="w">
+</span><span class="w">          </span><span class="nt">requests</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">cpu</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;400m&#34;</span><span class="w">
+</span><span class="w">            </span><span class="nt">memory</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;300Mi&#34;</span><span class="w">
+</span><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span>{{}}<span class="w">
+</span><span class="w">        </span><span class="nt">imagePullPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">IfNotPresent</span><span class="w">
+</span><span class="w">        </span><span class="nt">command</span><span class="p">:</span><span class="w">
 </span><span class="w">        </span>- <span class="s2">&#34;./docker-entrypoint.sh&#34;</span><span class="w">
 </span><span class="w">        </span>- <span class="s2">&#34;/usr/bin/kingshard&#34;</span><span class="w">
 </span><span class="w">        </span>- <span class="s2">&#34;-config=/etc/kingshard/ks.yaml&#34;</span><span class="w">
-</span><span class="w">        </span><span class="k">ports</span><span class="p">:</span><span class="w">
-</span><span class="w">        </span>- <span class="k">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">3306</span><span class="w">
-</span><span class="w">        </span><span class="k">volumeMounts</span><span class="p">:</span><span class="w">
-</span><span class="w">        </span>- <span class="k">mountPath</span><span class="p">:</span><span class="w"> </span>/opt/kingshard/<span class="w">
-</span><span class="w">          </span><span class="k">name</span><span class="p">:</span><span class="w"> </span>config-volume<span class="w">
-</span><span class="w">      </span><span class="k">volumes</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span>- <span class="k">name</span><span class="p">:</span><span class="w"> </span>config-volume<span class="w">
-</span><span class="w">        </span><span class="k">configMap</span><span class="p">:</span><span class="w">
-</span><span class="w">          </span><span class="k">defaultMode</span><span class="p">:</span><span class="w"> </span><span class="m">420</span><span class="w">
-</span><span class="w">          </span><span class="k">name</span><span class="p">:</span><span class="w"> </span>bayuser-it-config<span class="w">
-</span><span class="w">      </span><span class="k">dnsPolicy</span><span class="p">:</span><span class="w"> </span>ClusterFirst<span class="w">
-</span><span class="w">      </span><span class="k">restartPolicy</span><span class="p">:</span><span class="w"> </span>Always<span class="w">
-</span><span class="w">      </span><span class="k">schedulerName</span><span class="p">:</span><span class="w"> </span>default-scheduler<span class="w">
-</span><span class="w">      </span><span class="k">securityContext</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
-</span><span class="w"></span>---<span class="w">
-</span><span class="w"></span><span class="k">apiVersion</span><span class="p">:</span><span class="w"> </span>v1<span class="w">
-</span><span class="w"></span><span class="k">kind</span><span class="p">:</span><span class="w"> </span>Service<span class="w">
-</span><span class="w"></span><span class="k">metadata</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="k">name</span><span class="p">:</span><span class="w"> </span>db-mysql-shard<span class="w">
-</span><span class="w">  </span><span class="k">namespace</span><span class="p">:</span><span class="w"> </span>rds<span class="w">
-</span><span class="w"></span><span class="k">spec</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="k">selector</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span><span class="k">app</span><span class="p">:</span><span class="w"> </span>kingshard<span class="w">
-</span><span class="w">    </span><span class="k">instance</span><span class="p">:</span><span class="w"> </span>sbayuser-it<span class="w">
-</span><span class="w">  </span><span class="k">type</span><span class="p">:</span><span class="w"> </span>ClusterIP<span class="w">
-</span><span class="w">  </span><span class="k">ports</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- <span class="k">name</span><span class="p">:</span><span class="w"> </span>mysql<span class="w">
-</span><span class="w">      </span><span class="k">protocol</span><span class="p">:</span><span class="w"> </span>TCP<span class="w">
-</span><span class="w">      </span><span class="k">port</span><span class="p">:</span><span class="w"> </span><span class="m">3306</span><span class="w">
-</span><span class="w">      </span><span class="k">targetPort</span><span class="p">:</span><span class="w"> </span><span class="m">3306</span><span class="w">
+</span><span class="w">        </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">containerPort</span><span class="p">:</span><span class="w"> </span><span class="m">3306</span><span class="w">
+</span><span class="w">        </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/opt/kingshard/</span><span class="w">
+</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config-volume</span><span class="w">
+</span><span class="w">      </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config-volume</span><span class="w">
+</span><span class="w">        </span><span class="nt">configMap</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">defaultMode</span><span class="p">:</span><span class="w"> </span><span class="m">420</span><span class="w">
+</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">bayuser-it-config</span><span class="w">
+</span><span class="w">      </span><span class="nt">dnsPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterFirst</span><span class="w">
+</span><span class="w">      </span><span class="nt">restartPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Always</span><span class="w">
+</span><span class="w">      </span><span class="nt">schedulerName</span><span class="p">:</span><span class="w"> </span><span class="l">default-scheduler</span><span class="w">
+</span><span class="w">      </span><span class="nt">securityContext</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Service</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">db-mysql-shard</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">rds</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">selector</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">app</span><span class="p">:</span><span class="w"> </span><span class="l">kingshard</span><span class="w">
+</span><span class="w">    </span><span class="nt">instance</span><span class="p">:</span><span class="w"> </span><span class="l">sbayuser-it</span><span class="w">
+</span><span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterIP</span><span class="w">
+</span><span class="w">  </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">mysql</span><span class="w">
+</span><span class="w">      </span><span class="nt">protocol</span><span class="p">:</span><span class="w"> </span><span class="l">TCP</span><span class="w">
+</span><span class="w">      </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">3306</span><span class="w">
+</span><span class="w">      </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="m">3306</span><span class="w">
 </span></code></pre></div><h2 id="压测结果">压测结果</h2>
 <p>和之前两次用了一样的 wrk 压测参数做对比：</p>
 <h3 id="wrk-线程数-10并发数-80压测-10-分钟">wrk 线程数 10，并发数 80，压测 10 分钟</h3>
@@ -433,7 +433,7 @@ let gitalk = new Gitalk({
   repo: 'hj24.github.io',
   owner: 'hj24',
   admin: ['hj24'],
-  id: '2021-02-12 14:41:20 \x2b0800 CST',      
+  id: '2021-02-12 14:41:20 \u002b0800 CST',      
   distractionFreeMode: false,  
   title : '记一次扇贝账号服务的压测',
   labels : []

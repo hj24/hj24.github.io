@@ -6,11 +6,7 @@
     <description>Recent content in Python on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Mon, 02 Mar 2020 15:37:20 +0800</lastBuildDate>
-    
-	<atom:link href="https://hj24.life/tags/python/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Mon, 02 Mar 2020 15:37:20 +0800</lastBuildDate><atom:link href="https://hj24.life/tags/python/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>从源码看flask是如何保证线程安全的</title>
       <link>https://hj24.life/posts/%E4%BB%8E%E6%BA%90%E7%A0%81%E7%9C%8Bflask%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84/</link>

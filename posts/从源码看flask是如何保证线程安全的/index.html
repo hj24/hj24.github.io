@@ -127,7 +127,7 @@ Request Context 代表一个请求上下文，我们可以获取到当前请求�
 <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">exc_value</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">BROKEN_PYPY_CTXMGR_EXIT</span> <span class="ow">and</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">BROKEN_PYPY_CTXMGR_EXIT</span> <span class="ow">and</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">reraise</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span>
 </code></pre></div><p>在进入上下文时，会有一个栈的push操作，里面是这样定义的:</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -139,18 +139,18 @@ Request Context 代表一个请求上下文，我们可以获取到当前请求�
 </code></pre></div><p>最终它会被压到<code>_app_ctx_stack</code>这个栈中，同样的，对于Request上下文，它会被压到<code>_request_ctx_stack</code>这个栈中，不过它还多一步：</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">top</span> <span class="o">=</span> <span class="n">_request_ctx_stack</span><span class="o">.</span><span class="n">top</span>
-    <span class="k">if</span> <span class="n">top</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">top</span><span class="o">.</span><span class="n">preserved</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">top</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">top</span><span class="o">.</span><span class="n">preserved</span><span class="p">:</span>
         <span class="n">top</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">top</span><span class="o">.</span><span class="n">_preserved_exc</span><span class="p">)</span>
 
     <span class="c1"># Before we push the request context we have to ensure that there</span>
     <span class="c1"># is an application context.</span>
     <span class="n">app_ctx</span> <span class="o">=</span> <span class="n">_app_ctx_stack</span><span class="o">.</span><span class="n">top</span>
-    <span class="k">if</span> <span class="n">app_ctx</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">app_ctx</span><span class="o">.</span><span class="n">app</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">app_ctx</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">app_ctx</span><span class="o">.</span><span class="n">app</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">:</span>
         <span class="n">app_ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">app_context</span><span class="p">()</span>
         <span class="n">app_ctx</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_app_ctx_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">app_ctx</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_app_ctx_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_implicit_app_ctx_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="s2">&#34;exc_clear&#34;</span><span class="p">):</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">exc_clear</span><span class="p">()</span>
@@ -181,7 +181,7 @@ Request Context 代表一个请求上下文，我们可以获取到当前请求�
 <p>于是我想去看看它们是在什么地方被调用的，我是先从request下手的，既然是请求，肯定是从wsgi过来的，于是去看了wsgi_app的源码 (在flask的app.py里):</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">wsgi_app</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">):</span>
     <span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request_context</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
-    <span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">ctx</span><span class="o">.</span><span class="n">push</span><span class="p">()</span>
@@ -195,7 +195,7 @@ Request Context 代表一个请求上下文，我们可以获取到当前请求�
         <span class="k">return</span> <span class="n">response</span><span class="p">(</span><span class="n">environ</span><span class="p">,</span> <span class="n">start_response</span><span class="p">)</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">should_ignore_error</span><span class="p">(</span><span class="n">error</span><span class="p">):</span>
-            <span class="n">error</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">ctx</span><span class="o">.</span><span class="n">auto_pop</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
 </code></pre></div><p>可以看出来，请求到达，先进入request上下文，这时候会去检查是否有app上下文，没有就会先构建它。
 到这里，我只是大概理清楚了一个flask请求周期内这两个上下文的运作流程，我找了一张流程图，可以看一下:
@@ -245,7 +245,7 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
 <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;admin&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;admin@example.com&#39;</span><span class="p">)</span>
 <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
 <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-<span class="k">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
 
 <span class="n">database1</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">database1</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;SQLALCHEMY_DATABASE_URI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sqlite:////tmp/test1.db&#39;</span>
@@ -256,7 +256,7 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
 <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;admin_test&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;admin@example.com&#39;</span><span class="p">)</span>
 <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
 <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-<span class="k">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
 </code></pre></div><p>显然这是个没有使用app context的场景，我们的本意是给两个共存的flask app实例各自绑定一个数据库
 但是它并没有做到资源隔离，db在解释执行到database1之前代表的是database的数据库，之后又和datbase1绑定在一起，没有context来隔离，怎么在不同的场景下使用不同的db？</p>
 <p>那么，修改一下：</p>
@@ -271,7 +271,7 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
     <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;admin&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;admin@example.com&#39;</span><span class="p">)</span>
     <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
     <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
 
 <span class="n">database1</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">database1</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;SQLALCHEMY_DATABASE_URI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;sqlite:////tmp/test1.db&#39;</span>
@@ -282,7 +282,7 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
     <span class="n">admin</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;admin_test&#39;</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="s1">&#39;admin@example.com&#39;</span><span class="p">)</span>
     <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">admin</span><span class="p">)</span>
     <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
-    <span class="k">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s2">&#34;admin&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
 </code></pre></div><p>有了app上下文就好办了，可以通过<code>current_app</code>来获取当前的app，来初始化不同的db，上面这两个db都处于不同的上下文之中，因此都是隔离的</p>
 <p>到这里，问题就迎刃而解了，为了防止没说清楚，再给个例子:</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">current_app</span>
@@ -348,7 +348,7 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
         <span class="k">return</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__release_local__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">__storage__</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ident_func__</span><span class="p">(),</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__storage__</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ident_func__</span><span class="p">(),</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
@@ -377,7 +377,7 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
         <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </code></pre></div><ol>
 <li>通过重写getattr来在<code>__storage__</code>字典里根据<code>self.__ident_func__()</code></li>
-<li>获得的线程ID作为键值来获取当前线程对象内的name资源，这里的&rdquo;<strong>ident_func</strong>&ldquo;就是<code>get_ident</code></li>
+<li>获得的线程ID作为键值来获取当前线程对象内的name资源，这里的&quot;<strong>ident_func</strong>&ldquo;就是<code>get_ident</code></li>
 <li>要是释放资源时，调用<code>__release_local__</code>来根据线程ID把它从字典里pop掉</li>
 </ol>
 <h2 id="localstack">LocalStack</h2>
@@ -394,14 +394,14 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
     <span class="k">def</span> <span class="nf">__ident_func__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">__ident_func__</span>
 
-    <span class="nd">@__ident_func__.setter</span>
+    <span class="nd">@__ident_func__</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">__ident_func__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;__ident_func__&#34;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">def</span> <span class="nf">_lookup</span><span class="p">():</span>
             <span class="n">rv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">top</span>
-            <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&#34;object unbound&#34;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">rv</span>
 
@@ -409,8 +409,8 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
 
     <span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
         <span class="s2">&#34;&#34;&#34;Pushes a new item to the stack&#34;&#34;&#34;</span>
-        <span class="n">rv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">rv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="n">rv</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">rv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">rv</span>
@@ -419,9 +419,9 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
         <span class="s2">&#34;&#34;&#34;Removes the topmost item from the stack, will return the
 </span><span class="s2">        old value or `None` if the stack was already empty.
 </span><span class="s2">        &#34;&#34;&#34;</span>
-        <span class="n">stack</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">stack</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">None</span>
+        <span class="n">stack</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">stack</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">release_local</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -436,19 +436,19 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">None</span>
+            <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div><p>其实是对Local的封装，初始化的时候就是一个Local对象，给它加上了栈的结构：</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">push</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
-    <span class="n">rv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">rv</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="n">rv</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">rv</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">rv</span>
 
 <span class="k">def</span> <span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">stack</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">stack</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">None</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">,</span> <span class="s2">&#34;stack&#34;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">stack</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">release_local</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -465,10 +465,10 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
     
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&#34;__local&#34;</span><span class="p">,</span> <span class="s2">&#34;__dict__&#34;</span><span class="p">,</span> <span class="s2">&#34;__name__&#34;</span><span class="p">,</span> <span class="s2">&#34;__wrapped__&#34;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&#34;_LocalProxy__local&#34;</span><span class="p">,</span> <span class="n">local</span><span class="p">)</span>
         <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&#34;__name__&#34;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">local</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">local</span><span class="p">,</span> <span class="s2">&#34;__release_local__&#34;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">local</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">local</span><span class="p">,</span> <span class="s2">&#34;__release_local__&#34;</span><span class="p">):</span>
             <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&#34;__wrapped__&#34;</span><span class="p">,</span> <span class="n">local</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_current_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -493,19 +493,19 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
             <span class="k">return</span> <span class="s2">&#34;&lt;</span><span class="si">%s</span><span class="s2"> unbound&gt;&#34;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">())</span>
         <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="fm">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__unicode__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">unicode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">())</span>  <span class="c1"># noqa</span>
+            <span class="k">return</span> <span class="n">unicode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">())</span>  <span class="c1"># noqa</span>
         <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">())</span>
         <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
@@ -523,18 +523,18 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">key</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">PY2</span><span class="p">:</span>
-        <span class="fm">__getslice__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">__getslice__</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span>
 
-        <span class="k">def</span> <span class="fm">__setslice__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__setslice__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">seq</span>
 
-        <span class="k">def</span> <span class="fm">__delslice__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__delslice__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_current_object</span><span class="p">()[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span>
 
 </code></pre></div><p>它的作用就是代理Local和LocalStack对象，举个例子，来看之前的源码:</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">_lookup_req_object</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
     <span class="n">top</span> <span class="o">=</span> <span class="n">_request_ctx_stack</span><span class="o">.</span><span class="n">top</span>
-    <span class="k">if</span> <span class="n">top</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">top</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">_request_ctx_err_msg</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">top</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
@@ -564,8 +564,8 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
 
 <span class="n">item</span> <span class="o">=</span> <span class="n">get_item</span><span class="p">()</span>
 
-<span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
-<span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
 </code></pre></div><p>打印结果是：</p>
 <div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">123
 123
@@ -581,8 +581,8 @@ Flask 的两种 Context 分离更大的意义是为了非 web 应用的场合</p
 
 <span class="n">item</span> <span class="o">=</span> <span class="n">LocalProxy</span><span class="p">(</span><span class="n">get_item</span><span class="p">)</span>
 
-<span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
-<span class="k">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;abc&#39;</span><span class="p">])</span>
 </code></pre></div><p>打印结果是：</p>
 <div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">123
 1234
@@ -651,7 +651,7 @@ let gitalk = new Gitalk({
   repo: 'hj24.github.io',
   owner: 'hj24',
   admin: ['hj24'],
-  id: '2020-03-02 15:37:20 \x2b0800 CST',      
+  id: '2020-03-02 15:37:20 \u002b0800 CST',      
   distractionFreeMode: false,  
   title : '从源码看flask是如何保证线程安全的',
   labels : []

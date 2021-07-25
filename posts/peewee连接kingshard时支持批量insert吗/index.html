@@ -137,16 +137,16 @@ mysql -h cas-node-1 -u root -P <span class="m">3308</span> -p
 </code></pre></div><ul>
 <li>创建默认数据库</li>
 </ul>
-<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="o">`</span><span class="n">cas</span><span class="o">`</span> <span class="nb">CHARACTER</span> <span class="k">SET</span> <span class="n">utf8mb4</span> <span class="k">COLLATE</span> <span class="n">utf8mb4_general_ci</span><span class="p">;</span>
-</code></pre></div><ul>
+<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">CREATE</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="o">`</span><span class="n">cas</span><span class="o">`</span><span class="w"> </span><span class="nb">CHARACTER</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="n">utf8mb4</span><span class="w"> </span><span class="k">COLLATE</span><span class="w"> </span><span class="n">utf8mb4_general_ci</span><span class="p">;</span><span class="w">
+</span></code></pre></div><ul>
 <li>修改密码验证方式，mysql 8 之后修改了默认的身份验证方式，kingshard 目前还不支持，不修改的话会有 <code>Client does not support authentication protocol requested by server; consider upgrading MySQL client</code> 的报错</li>
 <li>相关问题参考<a href="https://stackoverflow.com/questions/50093144/mysql-8-0-client-does-not-support-authentication-protocol-requested-by-server">这里</a></li>
 </ul>
-<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="o">//</span> <span class="err">首先</span>
-<span class="k">ALTER</span> <span class="k">USER</span> <span class="s1">&#39;root&#39;</span><span class="o">@</span><span class="s1">&#39;%&#39;</span> <span class="n">IDENTIFIED</span> <span class="k">WITH</span> <span class="n">mysql_native_password</span> <span class="k">BY</span> <span class="s1">&#39;password&#39;</span><span class="p">;</span>
-<span class="o">//</span> <span class="err">然后</span>
-<span class="n">flush</span> <span class="k">privileges</span><span class="p">;</span>
-</code></pre></div><h3 id="配置并启动-kingshard">配置并启动 kingshard</h3>
+<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="o">//</span><span class="w"> </span><span class="err">首先</span><span class="w">
+</span><span class="w"></span><span class="k">ALTER</span><span class="w"> </span><span class="k">USER</span><span class="w"> </span><span class="s1">&#39;root&#39;</span><span class="o">@</span><span class="s1">&#39;%&#39;</span><span class="w"> </span><span class="n">IDENTIFIED</span><span class="w"> </span><span class="k">WITH</span><span class="w"> </span><span class="n">mysql_native_password</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="s1">&#39;password&#39;</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="o">//</span><span class="w"> </span><span class="err">然后</span><span class="w">
+</span><span class="w"></span><span class="n">flush</span><span class="w"> </span><span class="k">privileges</span><span class="p">;</span><span class="w">
+</span></code></pre></div><h3 id="配置并启动-kingshard">配置并启动 kingshard</h3>
 <p>参考<a href="https://github.com/flike/kingshard/blob/master/README_ZH.md">官网</a>安装并运行:</p>
 <blockquote>
 <ol>
@@ -161,32 +161,32 @@ mysql -h cas-node-1 -u root -P <span class="m">3308</span> -p
 </blockquote>
 <p>按前面配置的 mysql 节点，写对应的 kingshard 配置文件，采用按 user_id 哈希的方式，对 64 取模，一个节点 32 张表:</p>
 <div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># server listen addr</span><span class="w">
-</span><span class="w"></span><span class="k">addr </span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">9696</span><span class="w">
+</span><span class="w"></span><span class="nt">addr </span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">9696</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c"># prometheus server listen addr</span><span class="w">
-</span><span class="w"></span><span class="k">prometheus_addr </span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">7080</span><span class="w">
+</span><span class="w"></span><span class="nt">prometheus_addr </span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">7080</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c"># server user and password</span><span class="w">
-</span><span class="w"></span><span class="k">user_list</span><span class="p">:</span><span class="w">
-</span><span class="w"></span><span class="sd">-
-</span><span class="sd">    user :  root</span><span class="w">
-</span><span class="w">    </span><span class="k">password </span><span class="p">:</span><span class="w"> </span>toor333666<span class="w">
+</span><span class="w"></span><span class="nt">user_list</span><span class="p">:</span><span class="w">
+</span><span class="w"></span>-<span class="w">
+</span><span class="w">    </span><span class="nt">user </span><span class="p">:</span><span class="w">  </span><span class="l">root</span><span class="w">
+</span><span class="w">    </span><span class="nt">password </span><span class="p">:</span><span class="w"> </span><span class="l">toor333666</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c"># the web api server</span><span class="w">
-</span><span class="w"></span><span class="k">web_addr </span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">9797</span><span class="w">
+</span><span class="w"></span><span class="nt">web_addr </span><span class="p">:</span><span class="w"> </span><span class="m">0.0.0.0</span><span class="p">:</span><span class="m">9797</span><span class="w">
 </span><span class="w"></span><span class="c">#HTTP Basic Auth</span><span class="w">
-</span><span class="w"></span><span class="k">web_user </span><span class="p">:</span><span class="w"> </span>admin<span class="w">
-</span><span class="w"></span><span class="k">web_password </span><span class="p">:</span><span class="w"> </span>admin<span class="w">
+</span><span class="w"></span><span class="nt">web_user </span><span class="p">:</span><span class="w"> </span><span class="l">admin</span><span class="w">
+</span><span class="w"></span><span class="nt">web_password </span><span class="p">:</span><span class="w"> </span><span class="l">admin</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c"># if set log_path, the sql log will write into log_path/sql.log,the system log</span><span class="w">
 </span><span class="w"></span><span class="c"># will write into log_path/sys.log</span><span class="w">
 </span><span class="w"></span><span class="c">#log_path : /Users/flike/log</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c"># log level[debug|info|warn|error],default error</span><span class="w">
-</span><span class="w"></span><span class="k">log_level </span><span class="p">:</span><span class="w"> </span>debug<span class="w">
+</span><span class="w"></span><span class="nt">log_level </span><span class="p">:</span><span class="w"> </span><span class="l">debug</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c"># if set log_sql(on|off) off,the sql log will not output</span><span class="w">
-</span><span class="w"></span><span class="k">log_sql</span><span class="p">:</span><span class="w"> </span>on<span class="w">
+</span><span class="w"></span><span class="nt">log_sql</span><span class="p">:</span><span class="w"> </span><span class="kc">on</span><span class="w">
 </span><span class="w"> 
 </span><span class="w"></span><span class="c"># only log the query that take more than slow_log_time ms</span><span class="w">
 </span><span class="w"></span><span class="c">#slow_log_time : 100</span><span class="w">
@@ -201,63 +201,63 @@ mysql -h cas-node-1 -u root -P <span class="m">3308</span> -p
 </span><span class="w">
 </span><span class="w"></span><span class="c"># the charset of kingshard, if you don&#39;t set this item</span><span class="w">
 </span><span class="w"></span><span class="c"># the default charset of kingshard is utf8.</span><span class="w">
-</span><span class="w"></span><span class="k">proxy_charset</span><span class="p">:</span><span class="w"> </span>utf8mb4<span class="w">
+</span><span class="w"></span><span class="nt">proxy_charset</span><span class="p">:</span><span class="w"> </span><span class="l">utf8mb4</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c"># node is an agenda for real remote mysql server.</span><span class="w">
-</span><span class="w"></span><span class="k">nodes </span><span class="p">:</span><span class="w">
+</span><span class="w"></span><span class="nt">nodes </span><span class="p">:</span><span class="w">
 </span><span class="w"></span>- <span class="w">
-</span><span class="w">    </span><span class="k">name </span><span class="p">:</span><span class="w"> </span>cas-node<span class="m">-1</span><span class="w"> 
+</span><span class="w">    </span><span class="nt">name </span><span class="p">:</span><span class="w"> </span><span class="l">cas-node-1 </span><span class="w">
 </span><span class="w">
 </span><span class="w">    </span><span class="c"># default max conns for mysql server</span><span class="w">
-</span><span class="w">    </span><span class="k">max_conns_limit </span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
+</span><span class="w">    </span><span class="nt">max_conns_limit </span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
 </span><span class="w">
 </span><span class="w">    </span><span class="c"># all mysql in a node must have the same user and password</span><span class="w">
-</span><span class="w">    </span><span class="k">user </span><span class="p">:</span><span class="w">  </span>root<span class="w"> 
-</span><span class="w">    </span><span class="k">password </span><span class="p">:</span><span class="w"> </span>toor333666<span class="w">
+</span><span class="w">    </span><span class="nt">user </span><span class="p">:</span><span class="w">  </span><span class="l">root </span><span class="w">
+</span><span class="w">    </span><span class="nt">password </span><span class="p">:</span><span class="w"> </span><span class="l">toor333666</span><span class="w">
 </span><span class="w">
 </span><span class="w">    </span><span class="c"># master represents a real mysql master server </span><span class="w">
-</span><span class="w">    </span><span class="k">master </span><span class="p">:</span><span class="w"> </span><span class="m">127.0.0.1</span><span class="p">:</span><span class="m">3307</span><span class="w">
+</span><span class="w">    </span><span class="nt">master </span><span class="p">:</span><span class="w"> </span><span class="m">127.0.0.1</span><span class="p">:</span><span class="m">3307</span><span class="w">
 </span><span class="w">
 </span><span class="w">    </span><span class="c"># slave represents a real mysql salve server,and the number after &#39;@&#39; is </span><span class="w">
 </span><span class="w">    </span><span class="c"># read load weight of this slave.</span><span class="w">
 </span><span class="w">    </span><span class="c">#slave : 192.168.59.101:3307@2,192.168.59.101:3307@3</span><span class="w">
-</span><span class="w">    </span><span class="k">down_after_noalive </span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
+</span><span class="w">    </span><span class="nt">down_after_noalive </span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
 </span><span class="w"></span>- <span class="w">
-</span><span class="w">    </span><span class="k">name </span><span class="p">:</span><span class="w"> </span>cas-node<span class="m">-2</span><span class="w"> 
+</span><span class="w">    </span><span class="nt">name </span><span class="p">:</span><span class="w"> </span><span class="l">cas-node-2 </span><span class="w">
 </span><span class="w">
 </span><span class="w">    </span><span class="c"># default max conns for mysql server</span><span class="w">
-</span><span class="w">    </span><span class="k">max_conns_limit </span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
+</span><span class="w">    </span><span class="nt">max_conns_limit </span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
 </span><span class="w">
 </span><span class="w">    </span><span class="c"># all mysql in a node must have the same user and password</span><span class="w">
-</span><span class="w">    </span><span class="k">user </span><span class="p">:</span><span class="w">  </span>root<span class="w"> 
-</span><span class="w">    </span><span class="k">password </span><span class="p">:</span><span class="w"> </span>toor333666<span class="w">
+</span><span class="w">    </span><span class="nt">user </span><span class="p">:</span><span class="w">  </span><span class="l">root </span><span class="w">
+</span><span class="w">    </span><span class="nt">password </span><span class="p">:</span><span class="w"> </span><span class="l">toor333666</span><span class="w">
 </span><span class="w">
 </span><span class="w">    </span><span class="c"># master represents a real mysql master server </span><span class="w">
-</span><span class="w">    </span><span class="k">master </span><span class="p">:</span><span class="w"> </span><span class="m">127.0.0.1</span><span class="p">:</span><span class="m">3308</span><span class="w">
+</span><span class="w">    </span><span class="nt">master </span><span class="p">:</span><span class="w"> </span><span class="m">127.0.0.1</span><span class="p">:</span><span class="m">3308</span><span class="w">
 </span><span class="w">
 </span><span class="w">    </span><span class="c"># down mysql after N seconds noalive</span><span class="w">
 </span><span class="w">    </span><span class="c"># 0 will no down</span><span class="w">
-</span><span class="w">    </span><span class="k">down_after_noalive</span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
+</span><span class="w">    </span><span class="nt">down_after_noalive</span><span class="p">:</span><span class="w"> </span><span class="m">32</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c"># schema defines sharding rules, the db is the sharding table database.</span><span class="w">
-</span><span class="w"></span><span class="k">schema_list </span><span class="p">:</span><span class="w">
-</span><span class="w"></span><span class="sd">-
-</span><span class="sd">    user: root</span><span class="w">
-</span><span class="w">    </span><span class="k">nodes</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>cas-node<span class="m">-1</span><span class="p">,</span>cas-node<span class="m">-2</span><span class="p">]</span><span class="w">
-</span><span class="w">    </span><span class="k">default</span><span class="p">:</span><span class="w"> </span>cas-node<span class="m">-1</span><span class="w">
-</span><span class="w">    </span><span class="k">shard</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- <span class="k">db</span><span class="p">:</span><span class="w"> </span>cas<span class="w">
-</span><span class="w">      </span><span class="k">table</span><span class="p">:</span><span class="w"> </span>test<span class="w">
-</span><span class="w">      </span><span class="k">key</span><span class="p">:</span><span class="w"> </span>user_id<span class="w">
-</span><span class="w">      </span><span class="k">nodes</span><span class="p">:</span><span class="w">
-</span><span class="w">      </span>- cas-node<span class="m">-1</span><span class="w">
-</span><span class="w">      </span>- cas-node<span class="m">-2</span><span class="w">
-</span><span class="w">      </span><span class="k">type</span><span class="p">:</span><span class="w"> </span>hash<span class="w">
-</span><span class="w">      </span><span class="k">locations</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="m">32</span><span class="p">,</span><span class="w"> </span><span class="m">32</span><span class="p">]</span><span class="w">
+</span><span class="w"></span><span class="nt">schema_list </span><span class="p">:</span><span class="w">
+</span><span class="w"></span>-<span class="w">
+</span><span class="w">    </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="l">root</span><span class="w">
+</span><span class="w">    </span><span class="nt">nodes</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="l">cas-node-1,cas-node-2]</span><span class="w">
+</span><span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l">cas-node-1</span><span class="w">
+</span><span class="w">    </span><span class="nt">shard</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="nt">db</span><span class="p">:</span><span class="w"> </span><span class="l">cas</span><span class="w">
+</span><span class="w">      </span><span class="nt">table</span><span class="p">:</span><span class="w"> </span><span class="l">test</span><span class="w">
+</span><span class="w">      </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l">user_id</span><span class="w">
+</span><span class="w">      </span><span class="nt">nodes</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="l">cas-node-1</span><span class="w">
+</span><span class="w">      </span>- <span class="l">cas-node-2</span><span class="w">
+</span><span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l">hash</span><span class="w">
+</span><span class="w">      </span><span class="nt">locations</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="m">32</span><span class="p">,</span><span class="w"> </span><span class="m">32</span><span class="p">]</span><span class="w">
 </span></code></pre></div><p>修改 host 文件，添加下面这行:</p>
 <div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">127.0.0.1 kingshard
 </code></pre></div><p>看到下面这张图，kingshard 就跑起来了，和它文档描述的一样，配置运行确实很简单:
-<img src="https://tva1.sinaimg.cn/large/008eGmZEgy1goqud2ewdhj31h00f20wc.jpg" alt="kingshard 启动界面"></p>
+<img src="https://hj24-blog.oss-cn-shanghai.aliyuncs.com/blog/008eGmZEgy1goqud2ewdhj31h00f20wc.jpg" alt="kingshard 启动界面"></p>
 <h3 id="peewee">peewee</h3>
 <p>peewee 的配置就自己领会了，这里给出一部分配置:</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="n">PW_DB_URL</span> <span class="o">=</span> <span class="s2">&#34;mysql+pool://root:toor333666@kingshard:9696&#34;</span>
@@ -267,7 +267,7 @@ mysql -h cas-node-1 -u root -P <span class="m">3308</span> -p
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pendulum</span>
 
 <span class="k">class</span> <span class="nc">Test</span><span class="p">(</span><span class="n">pw</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="nb">id</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">BigIntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">idgen</span><span class="o">.</span><span class="n">get_sequence</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">BigIntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">idgen</span><span class="o">.</span><span class="n">get_sequence</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">user_id</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">BigIntegerField</span><span class="p">()</span>
     <span class="n">status</span> <span class="o">=</span> <span class="n">pw</span><span class="o">.</span><span class="n">SmallIntegerField</span><span class="p">()</span>
     <span class="n">created_at</span> <span class="o">=</span> <span class="n">DatetimeTZField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">pendulum</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
@@ -283,22 +283,22 @@ mysql -h cas-node-1 -u root -P <span class="m">3308</span> -p
     <span class="k">else</span><span class="p">:</span>
         <span class="n">shard</span> <span class="o">=</span> <span class="s2">&#34;/*cas-node-2*/&#34;</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">pwa</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">execute_sql</span><span class="p">(</span>
-        <span class="n">f</span><span class="s2">&#34;{shard}CREATE TABLE test_{str(i).zfill(4)} (&#34;</span>
-        <span class="n">f</span><span class="s2">&#34;created_at datetime(6) NOT NULL,&#34;</span>
-        <span class="n">f</span><span class="s2">&#34;updated_at datetime(6) NOT NULL,&#34;</span>
-        <span class="n">f</span><span class="s2">&#34;id bigint(20) NOT NULL,&#34;</span>
-        <span class="n">f</span><span class="s2">&#34;user_id bigint(20) NOT NULL,&#34;</span>
-        <span class="n">f</span><span class="s2">&#34;status smallint(6) NOT NULL,&#34;</span>
-        <span class="n">f</span><span class="s2">&#34;PRIMARY KEY (id),&#34;</span>
-        <span class="n">f</span><span class="s2">&#34;UNIQUE KEY test_id (id),&#34;</span>
-        <span class="n">f</span><span class="s2">&#34;UNIQUE KEY test_user_id (user_id)&#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;</span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">CREATE TABLE test_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="si">}</span><span class="s2"> (&#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;created_at datetime(6) NOT NULL,&#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;updated_at datetime(6) NOT NULL,&#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;id bigint(20) NOT NULL,&#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;user_id bigint(20) NOT NULL,&#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;status smallint(6) NOT NULL,&#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;PRIMARY KEY (id),&#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;UNIQUE KEY test_id (id),&#34;</span>
+        <span class="sa">f</span><span class="s2">&#34;UNIQUE KEY test_user_id (user_id)&#34;</span>
         <span class="s2">&#34;) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4&#34;</span>
     <span class="p">)</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
 </code></pre></div><p>跑完之后可以连对应 mysql 节点看一下表是否创建好:</p>
-<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">show</span> <span class="n">databases</span><span class="p">;</span>
-<span class="n">use</span> <span class="n">cas</span><span class="p">;</span>
-<span class="k">show</span> <span class="n">tables</span><span class="p">;</span>
-</code></pre></div><p>至此，整套环境搭建流程就跑通了。</p>
+<div class="highlight"><pre class="chroma"><code class="language-sql" data-lang="sql"><span class="k">show</span><span class="w"> </span><span class="n">databases</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="n">use</span><span class="w"> </span><span class="n">cas</span><span class="p">;</span><span class="w">
+</span><span class="w"></span><span class="k">show</span><span class="w"> </span><span class="n">tables</span><span class="p">;</span><span class="w">
+</span></code></pre></div><p>至此，整套环境搭建流程就跑通了。</p>
 <h2 id="问题验证">问题验证</h2>
 <p>我们今天要验证的问题是 peewee 在连接 kingshard 的情况下，是否可以运行跨节点的批量 insert 语句。
 之所以要验证这个，是因为实际业务中经常会有批量创建的需求，所以我在做某个需求时用 peewee 写的 insert_many 逻辑在代码评审时被提了 comment。
@@ -331,7 +331,7 @@ mysql -h cas-node-1 -u root -P <span class="m">3308</span> -p
 <p>知道了原因，我们就可以把 autocommit 设置成 1 就好了，设置也有两种方式：
 1）临时性设置</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="c1"># 在你自己的 peewee db 上运行这些命令就可以了</span>
-<span class="n">db</span><span class="o">.</span><span class="n">connect_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">db</span><span class="o">.</span><span class="n">connect_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">autocommit</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 <span class="n">db</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
 <span class="n">Test</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
@@ -350,7 +350,7 @@ mysql -h cas-node-1 -u root -P <span class="m">3308</span> -p
 <span class="k">def</span> <span class="nf">register_autocommit</span><span class="p">():</span>
     <span class="n">register_database</span><span class="p">(</span><span class="n">PooledMySQLAutoCommitDatabase</span><span class="p">,</span> <span class="s2">&#34;mysql+pool+autocommit&#34;</span><span class="p">)</span>
 </code></pre></div><p>重新连接 kingshard，可以看到 autocommit 已经设置成功:
-<img src="https://tva1.sinaimg.cn/large/008eGmZEgy1gorhshlmhtj31gw0g2ae1.jpg" alt=""></p>
+<img src="https://hj24-blog.oss-cn-shanghai.aliyuncs.com/blog/008eGmZEgy1gorhshlmhtj31gw0g2ae1.jpg" alt=""></p>
 <h3 id="跨节点-insert">跨节点 insert</h3>
 <p>来测试一下今天的主角:</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">Test</span><span class="o">.</span><span class="n">insert_many</span><span class="p">([{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span> <span class="mi">65</span><span class="p">,</span> <span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">0</span><span class="p">},{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">},{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">},{</span><span class="s2">&#34;user_id&#34;</span><span class="p">:</span><span class="mi">34</span><span class="p">,</span><span class="s2">&#34;status&#34;</span><span class="p">:</span><span class="mi">1</span><span class="p">}])</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
@@ -404,7 +404,7 @@ let gitalk = new Gitalk({
   repo: 'hj24.github.io',
   owner: 'hj24',
   admin: ['hj24'],
-  id: '2021-03-21 15:27:28 \x2b0800 CST',      
+  id: '2021-03-21 15:27:28 \u002b0800 CST',      
   distractionFreeMode: false,  
   title : 'Peewee连接kingshard时支持批量insert吗',
   labels : []

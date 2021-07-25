@@ -6,11 +6,7 @@
     <description>Recent content on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sat, 14 Nov 2020 19:23:04 +0800</lastBuildDate>
-    
-	<atom:link href="https://hj24.life/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sun, 21 Mar 2021 15:27:28 +0800</lastBuildDate><atom:link href="https://hj24.life/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Peewee连接kingshard时支持批量insert吗</title>
       <link>https://hj24.life/posts/peewee%E8%BF%9E%E6%8E%A5kingshard%E6%97%B6%E6%94%AF%E6%8C%81%E6%89%B9%E9%87%8Finsert%E5%90%97/</link>
@@ -71,7 +67,7 @@
       <pubDate>Sat, 14 Nov 2020 19:23:04 +0800</pubDate>
       
       <guid>https://hj24.life/snippets/</guid>
-      <description>东拼西凑，存一些常用的代码片，持续更新 MySQL 找出所有执行时间超过 5 分钟的线程，拼凑出 kill 语句，方便后面查杀 SELECT CONCAT(&amp;#39;kill &amp;#39;, id, &amp;#39;;&amp;#39;) FROM information_schema.processlist WHERE Command != &amp;#39;Sleep&amp;#39; AND Time &amp;gt; 300 ORDER BY Time DESC; Shell 截取有固定格式的长文本的第 n 列 cat example.txt|awk &amp;#39;{print $n}&amp;#39;</description>
+      <description>东拼西凑，存一些常用的代码片，持续更新 MySQL 找出所有执行时间超过 5 分钟的线程，拼凑出 kill 语句，方便后面查杀 SELECTCONCAT(&amp;#39;kill &amp;#39;,id,&amp;#39;;&amp;#39;)FROMinformation_schema.processlistWHERECommand!=&amp;#39;Sleep&amp;#39;ANDTime&amp;gt;300ORDERBYTimeDESC;Shell 截取有固定格式的长文本的第 n 列 cat example.txt|awk &amp;#39;{print $n}&amp;#39;</description>
     </item>
     
     <item>

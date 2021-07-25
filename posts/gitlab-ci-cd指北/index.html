@@ -249,54 +249,54 @@ gitlab-runner start
 <strong>ps: 要注意该文件需要符合yaml语法</strong></li>
 </ol>
 <div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># 定义CI/CD流程需要的stages，以下的build-test-deploy顺序执行</span><span class="w">
-</span><span class="w"></span><span class="k">stages</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span>- build<span class="w">
-</span><span class="w">  </span>- test<span class="w">
-</span><span class="w">  </span>- deploy<span class="w">
+</span><span class="w"></span><span class="nt">stages</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span>- <span class="l">build</span><span class="w">
+</span><span class="w">  </span>- <span class="l">test</span><span class="w">
+</span><span class="w">  </span>- <span class="l">deploy</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c"># 定义各个流程需要的job</span><span class="w">
 </span><span class="w"></span><span class="c">## 构建项目的job，指定运行的runner的tag为v1，就是我们刚才配置的</span><span class="w">
 </span><span class="w"></span><span class="c">## 在这个build任务里，我们简单的安装了项目所需要的依赖</span><span class="w">
 </span><span class="w"></span><span class="c">## 由于runner的executor是shell，所以会在runner所在的机器上创建一个临时的build文件夹存放代码</span><span class="w">
-</span><span class="w"></span><span class="k">job_build</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="k">stage</span><span class="p">:</span><span class="w"> </span>build<span class="w">
-</span><span class="w">  </span><span class="k">tags</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- v1<span class="w">
-</span><span class="w">  </span><span class="k">script</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;installing&#34;</span><span class="w">
-</span><span class="w">    </span>- pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt<span class="w"> </span>-i<span class="w"> </span>https<span class="p">:</span>//mirrors.aliyun.com/pypi/simple/<span class="w">
-</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;finish installing&#34;</span><span class="w">
+</span><span class="w"></span><span class="nt">job_build</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">stage</span><span class="p">:</span><span class="w"> </span><span class="l">build</span><span class="w">
+</span><span class="w">  </span><span class="nt">tags</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="l">v1</span><span class="w">
+</span><span class="w">  </span><span class="nt">script</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="l">echo &#34;installing&#34;</span><span class="w">
+</span><span class="w">    </span>- <span class="l">pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/</span><span class="w">
+</span><span class="w">    </span>- <span class="l">echo &#34;finish installing&#34;</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c">## 测试阶段的job，使用pytest运行单元测试</span><span class="w">
-</span><span class="w"></span><span class="k">job_test</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="k">stage</span><span class="p">:</span><span class="w"> </span>test<span class="w">
-</span><span class="w">  </span><span class="k">tags</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- v1<span class="w">
-</span><span class="w">  </span><span class="k">script</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;testing&#34;</span><span class="w">
-</span><span class="w">    </span>- pytest<span class="w"> </span>test_app.py<span class="w">
-</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;finish testing&#34;</span><span class="w">
+</span><span class="w"></span><span class="nt">job_test</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">stage</span><span class="p">:</span><span class="w"> </span><span class="l">test</span><span class="w">
+</span><span class="w">  </span><span class="nt">tags</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="l">v1</span><span class="w">
+</span><span class="w">  </span><span class="nt">script</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="l">echo &#34;testing&#34;</span><span class="w">
+</span><span class="w">    </span>- <span class="l">pytest test_app.py</span><span class="w">
+</span><span class="w">    </span>- <span class="l">echo &#34;finish testing&#34;</span><span class="w">
 </span><span class="w">
 </span><span class="w"></span><span class="c">## 部署阶段，在脚本开始之前先清空之前部署好的代码文件，注意，这并不是必须的，仅仅只是针对这个示例项目而言</span><span class="w">
 </span><span class="w"></span><span class="c">## 真实项目大都是用git pull更新代码，docker构建镜像之类的</span><span class="w">
 </span><span class="w"></span><span class="c">## 清空旧代码之后git clone拉取最新代码到新目录test_deploy下，进入到项目根目录下运行app.py</span><span class="w">
-</span><span class="w"></span><span class="k">job_deploy</span><span class="p">:</span><span class="w">
-</span><span class="w">  </span><span class="k">stage</span><span class="p">:</span><span class="w"> </span>deploy<span class="w">
-</span><span class="w">  </span><span class="k">tags</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- v1<span class="w">
-</span><span class="w">  </span><span class="k">only</span><span class="p">:</span><span class="w"> 
-</span><span class="w">    </span>- master<span class="w">
-</span><span class="w">  </span><span class="k">before_script</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- cd<span class="w"> </span>~/desktop<span class="w">
-</span><span class="w">    </span>- rm<span class="w"> </span>-rf<span class="w"> </span>test_deploy/<span class="w">
-</span><span class="w">    </span>- mkdir<span class="w"> </span>test_deploy<span class="w">
-</span><span class="w">    </span>- cd<span class="w"> </span>test_deploy<span class="w">
-</span><span class="w">  </span><span class="k">script</span><span class="p">:</span><span class="w">
-</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;deploying&#34;</span><span class="w">
-</span><span class="w">    </span>- git<span class="w"> </span>clone<span class="w"> </span>git@gitlab.com<span class="p">:</span>mambahj/test.git<span class="w">
-</span><span class="w">    </span>- cd<span class="w"> </span>test<span class="w">
-</span><span class="w">    </span>- python<span class="w"> </span>app.py<span class="w">
-</span><span class="w">    </span>- echo<span class="w"> </span><span class="s2">&#34;finish deploying&#34;</span><span class="w">
+</span><span class="w"></span><span class="nt">job_deploy</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">stage</span><span class="p">:</span><span class="w"> </span><span class="l">deploy</span><span class="w">
+</span><span class="w">  </span><span class="nt">tags</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="l">v1</span><span class="w">
+</span><span class="w">  </span><span class="nt">only</span><span class="p">:</span><span class="w"> 
+</span><span class="w">    </span>- <span class="l">master</span><span class="w">
+</span><span class="w">  </span><span class="nt">before_script</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="l">cd ~/desktop</span><span class="w">
+</span><span class="w">    </span>- <span class="l">rm -rf test_deploy/</span><span class="w">
+</span><span class="w">    </span>- <span class="l">mkdir test_deploy</span><span class="w">
+</span><span class="w">    </span>- <span class="l">cd test_deploy</span><span class="w">
+</span><span class="w">  </span><span class="nt">script</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span>- <span class="l">echo &#34;deploying&#34;</span><span class="w">
+</span><span class="w">    </span>- <span class="l">git clone git@gitlab.com:mambahj/test.git</span><span class="w">
+</span><span class="w">    </span>- <span class="l">cd test</span><span class="w">
+</span><span class="w">    </span>- <span class="l">python app.py</span><span class="w">
+</span><span class="w">    </span>- <span class="l">echo &#34;finish deploying&#34;</span><span class="w">
 </span></code></pre></div><ol start="2">
 <li>push代码，执行CI/CD流程</li>
 </ol>
@@ -348,7 +348,7 @@ let gitalk = new Gitalk({
   repo: 'hj24.github.io',
   owner: 'hj24',
   admin: ['hj24'],
-  id: '2020-02-05 19:50:30 \x2b0800 CST',      
+  id: '2020-02-05 19:50:30 \u002b0800 CST',      
   distractionFreeMode: false,  
   title : 'Gitlab CI CD指北',
   labels : []
