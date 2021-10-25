@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="hj24" />
+	
+	
+	
+	<title>Kibana创建不了index Pattern怎么办 ｜ 客舟听雨</title>
+	
+    
+    
+    <meta name="description" content="这个问题的根源是某个 es 集群的分片数过多，集群负载太高，连带着导致 kibana 这边建立不了 index pattern。虽然最终解决还是选择了给集群升配，但这中间给索引做 redindex、shrink 等操作还是积攒了不少经验。
+" />
+    
+
+    
+    
+    <meta name="keywords" content="Hugo, theme, zozo" />
+    
+
+	
+    
+    <link rel="shortcut icon" href="https://hj24.life/images/favicon.ico" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.lifecss/normalize.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/zozo.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/highlight.css" />
+
+    
+    
+</head>
+
+<body>
+    <div class="main animate__animated animate__fadeInDown">
+        <div class="nav_container animated fadeInDown">
+    <div class="site_nav" id="site_nav">
+        <ul>
+            
+            <li>
+                <a href="/">首页</a>
+            </li>
+            
+            <li>
+                <a href="/posts/">归档</a>
+            </li>
+            
+            <li>
+                <a href="/tags/">标签</a>
+            </li>
+            
+            <li>
+                <a href="/fav/">好站</a>
+            </li>
+            
+            <li>
+                <a href="/snippets/">代码片</a>
+            </li>
+            
+            <li>
+                <a href="/about/">关于</a>
+            </li>
+            
+        </ul>
+    </div>
+    <div class="menu_icon">
+        <a id="menu_icon"><i class="ri-menu-line"></i></a>
+    </div>
+</div>
+        <div class="header animated fadeInDown">
+    <div class="site_title_container">
+        <div class="site_title">
+            <h1>
+                <a href="https://hj24.life">
+                    <span>客舟听雨</span>
+                </a>
+            </h1>
+        </div>
+        <div class="description">
+            <p class="sub_title">hj24.life</p>
+            <div class="my_socials">
+                
+                
+                <a href="https://github.com/hj24" title="github" target="_blank"><i class="ri-github-fill"></i></a>
+                
+                
+                
+                <a href="https://www.zhihu.com/people/da-li-ju-13" title="zhihu" target="_blank"><i class="ri-zhihu-fill"></i></a>
+                
+                
+                <a href="https://hj24.life/index.xml" type="application/rss+xml" title="rss" target="_blank"><i
+                        class="ri-rss-fill"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="content">
+            <div class="post_page">
+                <div class="post animate__animated animate__fadeInDown">
+                    <div class="post_title post_detail_title">
+                        <h2><a href='/posts/kibana%E5%88%9B%E5%BB%BA%E4%B8%8D%E4%BA%86index-pattern%E6%80%8E%E4%B9%88%E5%8A%9E/'>Kibana创建不了index Pattern怎么办</a></h2>
+                        <span class="date">2021.10.21</span>
+                    </div>
+                    <div class="post_content markdown"><p>这个问题的根源是某个 es 集群的分片数过多，集群负载太高，连带着导致 kibana 这边建立不了 index pattern。虽然最终解决还是选择了给集群升配，但这中间给索引做 redindex、shrink 等操作还是积攒了不少经验。</p>
+<h2 id="扫盲">扫盲</h2>
+<p>在修复这个问题之前，其实我对 es 几乎一无所知，平时只是开发时会调 api 做一些搜索功能，或者只是用来埋点 debug，所以在修这个问题之前，我特地扫了一眼一些常用的概念，这里顺带记录下来，不感兴趣的可以跳过这一节。</p>
+<p>1）文档 - document</p>
+<p>文档是一个存储在 es 中的 json 文档，类比 mysql 中的一个数据行，需要依附于某张表</p>
+<p>2）索引 - index</p>
+<p>一组文档的集合，类似于 mysql 的 database，有一个或多个主分片（shard）和零个或多个副分片</p>
+<p>3）类型 - type（已废弃）</p>
+<p>原来是类比于 mysql 某个 database 的一个 table，但是因为 es 会认为同一个索引不同 type 下的两个同名字段是同一个，所以 type 这个概念其实没有存在的必要，后面也废弃了</p>
+<p>4）分片 - shard</p>
+<p>把一个大文件切分为小文件分散在多个节点上，类似于 mysql 中的分库分表，减轻单点压力，es 默认给每个索引分配 5 个主分片（primary shard），在索引创建前可以通过 <code>number_of_shards</code> 指定，但是一旦创建就没法直接修改，除非做一些 shrink 之类的操作。shard 的总数处理考虑 primaries 之外还要考虑下面提到的副本数</p>
+<p>5）副本 - replica</p>
+<p>某个文件的拷贝，这个概念是相对于 shard 而言的，如果你有一个索引，5 个 primary shard 和 1 个副本，那么最终总的 shard 为 <code>5 + 5 * 1 = 10</code></p>
+<p>6）映射 - mapping</p>
+<p>类似 mysql 中某个 db 的 schema 定义，每个索引都要这样一个映射，定义了各个 field 的类型，这个映射可以自己定义，也可以自动生成</p>
+<p>7）字段 - field</p>
+<p>类比于 mysql 中的 column，就是各个字段名</p>
+<h2 id="问题定位">问题定位</h2>
+<p>这个问题的表现是在 kibana 上 creat index pattern 的时候，一直转圈，新建不了，顺便还能看到有接口一直 504 了：
+<img src="https://hj24-blog.oss-cn-shanghai.aliyuncs.com/blog/kibana-create-index-pattern.png" alt=""></p>
+<p>看监控能看到集群的磁盘占用率非常高，在清理了一批无用索引之后仍然有节点接近 85% 的警戒线：
+<img src="https://hj24-blog.oss-cn-shanghai.aliyuncs.com/blog/%E8%8A%82%E7%82%B9%E7%A3%81%E7%9B%98%E4%BD%BF%E7%94%A8%E7%8E%87.png" alt=""></p>
+<p>同时请求了下面的接口看了一下集群目前的分片数，6 个节点总分片已经到了 16276，平均每个节点 2713 左右，远远超过了阿里云建议的每个节点 400 个分片左右：</p>
+<div class="highlight"><pre class="chroma"><code class="language-json" data-lang="json"><span class="err">GET</span> <span class="err">_cat/health?v</span>
+</code></pre></div><p>看阿里云后台的诊断也能看出来：
+<img src="https://hj24-blog.oss-cn-shanghai.aliyuncs.com/blog/es-ali-doctor.png" alt=""></p>
+<p>咨询了阿里云技术支持，得到的回答是最我们扩容前磁盘占用率曾经到过 95%，触发了 es 配置的只读索引，需要跑下面的命令手动解除一下：</p>
+<div class="highlight"><pre class="chroma"><code class="language-json" data-lang="json"><span class="err">PUT</span> <span class="err">_all/_settings</span>
+<span class="p">{</span>    
+    <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&#34;blocks&#34;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&#34;read_only_allow_delete&#34;</span><span class="p">:</span> <span class="kc">null</span>
+      <span class="p">}</span>
+   <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div><p>但可气的是调这个 api 也 504 了，说明分片过多已经严重影响了集群的资源，这个想法也得到了阿里云技术支持的验证，现在看来 kibana 新建不了 index pattern 的罪魁祸首大概率是因为分片过多了。</p>
+<p>那么这个问题无非就是从下面几个方面解了：</p>
+<ol>
+<li>合并小索引到单个索引</li>
+<li>缩减索引的分片</li>
+<li>集群升配</li>
+</ol>
+<h2 id="问题解决">问题解决</h2>
+<h3 id="零设置索引模板">零、设置索引模板</h3>
+<p>在我们的集群默认配置下，es 新建的索引主分片是 5，副本是 1，不过对于一些预期比较小的索引、不是很重要的索引，这个配置是比较浪费的。</p>
+<p>因此可以为它们建一个模板，统一的把这一类索引的主分片设置为 1 来达到增量数据缩减分片的目的，具体操作上可以在 kibana 的 dev tools 里执行下面的 api（one-shard 是你取的模板名）：</p>
+<div class="highlight"><pre class="chroma"><code class="language-json" data-lang="json"><span class="err">PUT</span> <span class="err">_template/one-shard</span>
+<span class="p">{</span>
+  <span class="nt">&#34;index_patterns&#34;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="s2">&#34;abc-*&#34;</span><span class="p">,</span>
+      <span class="s2">&#34;xyz-*&#34;</span>
+    <span class="p">],</span>
+  <span class="nt">&#34;settings&#34;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&#34;number_of_shards&#34;</span><span class="p">:</span> <span class="s2">&#34;1&#34;</span>
+      <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div><p>设置了模板后，所有符合 index_patterns 配置的增量数据或者新建的索引都会使用这个模板将主分片数设为 1，同时对于存量的索引，我们也可以配合后面提到的 reindex 操作，把旧的主分片比较大的索引 reindex 到符合 index_patterns 的新索引上，然后删除旧索引来达到缩减分片的目的。</p>
+<h3 id="一合并小索引到单个索引">一、合并小索引到单个索引</h3>
+<p>es 里最符合合并小索引到单个索引的语义的 api 就是 <a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.15/docs-reindex.html">reindex</a> 了，可以把源索引搬到 dest 索引上:</p>
+<div class="highlight"><pre class="chroma"><code class="language-json" data-lang="json"><span class="err">POST</span> <span class="err">_reindex</span>
+<span class="p">{</span>
+  <span class="nt">&#34;source&#34;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="s2">&#34;my-index-000001&#34;</span>
+  <span class="p">},</span>
+  <span class="nt">&#34;dest&#34;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="s2">&#34;my-new-index-000001&#34;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div><p>甚至它还可以跨集群迁移：</p>
+<div class="highlight"><pre class="chroma"><code class="language-json" data-lang="json"><span class="err">POST</span> <span class="err">_reindex</span>
+<span class="p">{</span>
+  <span class="nt">&#34;source&#34;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&#34;remote&#34;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&#34;host&#34;</span><span class="p">:</span> <span class="s2">&#34;http://otherhost:9200&#34;</span><span class="p">,</span>
+      <span class="nt">&#34;username&#34;</span><span class="p">:</span> <span class="s2">&#34;user&#34;</span><span class="p">,</span>
+      <span class="nt">&#34;password&#34;</span><span class="p">:</span> <span class="s2">&#34;pass&#34;</span>
+    <span class="p">},</span>
+    <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="s2">&#34;my-index-000001&#34;</span><span class="p">,</span>
+    <span class="nt">&#34;query&#34;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&#34;match&#34;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&#34;test&#34;</span><span class="p">:</span> <span class="s2">&#34;data&#34;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">},</span>
+  <span class="nt">&#34;dest&#34;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&#34;index&#34;</span><span class="p">:</span> <span class="s2">&#34;my-new-index-000001&#34;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div><p>由于我们出问题的这个 es 集群主要是用来存业务埋点数据的，类似于日志记录，所以索引一般是按月按年来分组，比如一组常见的索引：</p>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">abc-2021.01
+abc-2021.02
+abc-2021.03
+abc-2021.04
+abc-2021.05
+</code></pre></div><p>如果 abc 这个索引模式整体比较小，没有必要分块，就可以用 reindex 操作配合 one-shard 模板把它们合并成 1 个主分片为 1 副本为 1 的大索引 <code>abc</code>，假设之前每个小索引都有 5 个主分片和 1 个副本，那么我们就能省下：<code>(5 + 1 * 5) * 5 - 2 = 23</code> 个分片。</p>
+<p>当然了，reindex 不止可以用于小索引合并到大索引，根据业务特点来看，像埋点、日志这种有明显冷热性质的数据，对于没有更新且几乎没有查询的旧的索引，即使比较大也是可以 reindex 到一个总的归档索引上的，具体就看取舍了。</p>
+<p>当然实际操作中，我们也不会直接在 dev tools 中调 api 去做 reindex，而是会用 <a href="https://github.com/elastic/curator">elasticsearch-curator</a> 这个工具的官方镜像去维护一组 k8s job 分配一定的资源部署到线上执行，这里给一个例子：</p>
+<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="c"># One-Time job</span><span class="w">
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ConfigMap</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">reindex-abc-config</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">guardian</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator</span><span class="w">
+</span><span class="w"></span><span class="nt">data</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">migration_old-indices.yml</span><span class="p">:</span><span class="w"> </span><span class="p">|-</span><span class="sd">
+</span><span class="sd">    # Remember, leave a key empty if there is no value.  None will be a string,
+</span><span class="sd">    # not a Python &#34;NoneType&#34;
+</span><span class="sd">    #
+</span><span class="sd">    # Also remember that all examples have &#39;disable_action&#39; set to True.  If you
+</span><span class="sd">    # want to use this action as a template, be sure to set this to False after
+</span><span class="sd">    # copying it.
+</span><span class="sd">    actions:
+</span><span class="sd">      1:
+</span><span class="sd">        description: &#34;Reindex remote index1 to local index1&#34;
+</span><span class="sd">        action: reindex
+</span><span class="sd">        options:
+</span><span class="sd">          wait_interval: 9
+</span><span class="sd">          max_wait: -1
+</span><span class="sd">          request_body:
+</span><span class="sd">            source:
+</span><span class="sd">              index: &#39;abc*$&#39;
+</span><span class="sd">            dest:
+</span><span class="sd">              index: abc
+</span><span class="sd">        filters:
+</span><span class="sd">        - filtertype: none</span><span class="w">    
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ConfigMap</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">reindex-abc-curator-config</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">guardian</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator</span><span class="w">
+</span><span class="w"></span><span class="nt">data</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">curator_conf.yml</span><span class="p">:</span><span class="w"> </span><span class="p">|-</span><span class="sd">
+</span><span class="sd">    # Remember, leave a key empty if there is no value.  None will be a string,
+</span><span class="sd">    # not a Python &#34;NoneType&#34;
+</span><span class="sd">    client:
+</span><span class="sd">      hosts:
+</span><span class="sd">        - elasticsearch-databeat.guardian
+</span><span class="sd">      port: 9200
+</span><span class="sd">      url_prefix:
+</span><span class="sd">      use_ssl: False
+</span><span class="sd">      certificate:
+</span><span class="sd">      client_cert:
+</span><span class="sd">      client_key:
+</span><span class="sd">      ssl_no_validate: False
+</span><span class="sd">      http_auth: user:password
+</span><span class="sd">      timeout: 30
+</span><span class="sd">      master_only: False
+</span><span class="sd">
+</span><span class="sd">    logging:
+</span><span class="sd">      loglevel: DEBUG
+</span><span class="sd">      logfile:
+</span><span class="sd">      logformat: default
+</span><span class="sd">      blacklist: [&#39;elasticsearch&#39;, &#39;urllib3&#39;]</span><span class="w">    
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">batch/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Job</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator</span><span class="w">
+</span><span class="w">    </span><span class="nt">tier</span><span class="p">:</span><span class="w"> </span><span class="l">migration-job</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator-reindex-abc</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">guardian</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">backoffLimit</span><span class="p">:</span><span class="w"> </span><span class="m">4</span><span class="w">
+</span><span class="w">  </span><span class="nt">parallelism</span><span class="p">:</span><span class="w"> </span><span class="m">1</span><span class="w">
+</span><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">args</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- --<span class="l">config</span><span class="w">
+</span><span class="w">        </span>- <span class="l">/etc/curator/curator_conf.yml</span><span class="w">
+</span><span class="w">        </span>- <span class="l">/etc/curator/reindex-abc.yml</span><span class="w">
+</span><span class="w">        </span><span class="nt">env</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_HOST_LOCAL</span><span class="w">
+</span><span class="w">          </span><span class="nt">valueFrom</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">secretKeyRef</span><span class="p">:</span><span class="w">
+</span><span class="w">              </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_HOST_LOCAL</span><span class="w">
+</span><span class="w">              </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">elk-secrets</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_DATABEAT_PORT</span><span class="w">
+</span><span class="w">          </span><span class="nt">valueFrom</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">secretKeyRef</span><span class="p">:</span><span class="w">
+</span><span class="w">              </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_DATABEAT_PORT</span><span class="w">
+</span><span class="w">              </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">elk-secrets</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_DATABEAT_AUTH</span><span class="w">
+</span><span class="w">          </span><span class="nt">valueFrom</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">secretKeyRef</span><span class="p">:</span><span class="w">
+</span><span class="w">              </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_DATABEAT_AUTH</span><span class="w">
+</span><span class="w">              </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">elk-secrets</span><span class="w">
+</span><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">praseodym/elasticsearch-curator:latest</span><span class="w">
+</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator</span><span class="w">
+</span><span class="w">        </span><span class="nt">resources</span><span class="p">:</span><span class="w"> </span>{}<span class="w">
+</span><span class="w">        </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/etc/curator/curator_conf.yml</span><span class="w">
+</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config</span><span class="w">
+</span><span class="w">          </span><span class="nt">readOnly</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">          </span><span class="nt">subPath</span><span class="p">:</span><span class="w"> </span><span class="l">curator_conf.yml</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/etc/curator/reindex-homies-app-jpush.yml</span><span class="w">
+</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">action-config</span><span class="w">
+</span><span class="w">          </span><span class="nt">readOnly</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">          </span><span class="nt">subPath</span><span class="p">:</span><span class="w"> </span><span class="l">reindex-homies-app-jpush.yml</span><span class="w">
+</span><span class="w">      </span><span class="nt">dnsPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">ClusterFirst</span><span class="w">
+</span><span class="w">      </span><span class="nt">restartPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Never</span><span class="w">
+</span><span class="w">      </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">configMap</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">defaultMode</span><span class="p">:</span><span class="w"> </span><span class="m">0600</span><span class="w">
+</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">reindex-abc-curator-config</span><span class="w">
+</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">configMap</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">defaultMode</span><span class="p">:</span><span class="w"> </span><span class="m">0600</span><span class="w">
+</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">reindex-abc-config</span><span class="w">
+</span><span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">action-config</span><span class="w">
+</span></code></pre></div><h3 id="二缩减索引的分片">二、缩减索引的分片</h3>
+<p>那么对于一些不太适合 reindex 到一个大索引里的数据，想要缩减分片应该如何处理呢？</p>
+<p>其实 es 也提供了一个 shrink 操作，顾名思义就是瘦身，怎么使用可以看<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.15/ilm-shrink.html">官方文档</a>，它做的事情就是更改索引的配置，比如之前没有经过 one-shard 配置的索引可以通过 shrink 修改它的分片数，副本数之类的放到一个新索引上，然后删除旧索引，当然我这里的描述其实是非常简略的，这个具体过程大家可以自行搜索。</p>
+<p>使用上可以给个例子：</p>
+<div class="highlight"><pre class="chroma"><code class="language-yaml" data-lang="yaml"><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ConfigMap</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator-action-config-shrink</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">guardian</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator</span><span class="w">
+</span><span class="w"></span><span class="nt">data</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">shrink_forcemerge.yml</span><span class="p">:</span><span class="w"> </span><span class="p">|-</span><span class="sd">
+</span><span class="sd">    # Remember, leave a key empty if there is no value.  None will be a string,
+</span><span class="sd">    # not a Python &#34;NoneType&#34;
+</span><span class="sd">    #
+</span><span class="sd">    # Also remember that all examples have &#39;disable_action&#39; set to True.  If you
+</span><span class="sd">    # want to use this action as a template, be sure to set this to False after
+</span><span class="sd">    # copying it.
+</span><span class="sd">    actions:
+</span><span class="sd">      1:
+</span><span class="sd">        action: shrink
+</span><span class="sd">        description: &gt;-
+</span><span class="sd">          Shrink selected indices on the node with the most available space.
+</span><span class="sd">          Delete source index after successful shrink, then reroute the shrunk
+</span><span class="sd">          index with the provided parameters.
+</span><span class="sd">        options:
+</span><span class="sd">          disable_action: False
+</span><span class="sd">          shrink_node: DETERMINISTIC
+</span><span class="sd">          node_filters:
+</span><span class="sd">            permit_masters: True
+</span><span class="sd">            exclude_nodes: [&#39;not_this_node&#39;]
+</span><span class="sd">          number_of_shards: 1
+</span><span class="sd">          number_of_replicas: 1
+</span><span class="sd">          shrink_prefix:
+</span><span class="sd">          shrink_suffix:
+</span><span class="sd">          delete_after: True
+</span><span class="sd">          wait_for_active_shards: 1
+</span><span class="sd">          extra_settings:
+</span><span class="sd">            settings:
+</span><span class="sd">              index.codec: best_compression
+</span><span class="sd">          wait_for_completion: True
+</span><span class="sd">          wait_for_rebalance: True
+</span><span class="sd">          copy_aliases: True
+</span><span class="sd">          wait_interval: 9
+</span><span class="sd">          max_wait: -1
+</span><span class="sd">        filters:
+</span><span class="sd">          - filtertype: pattern
+</span><span class="sd">            kind: regex
+</span><span class="sd">            value: &#39;^abc-202(0|1).*?(?&lt;!shrink)$&#39;
+</span><span class="sd">      2:
+</span><span class="sd">        action: forcemerge
+</span><span class="sd">        description: &gt;-
+</span><span class="sd">          Perform a forceMerge on selected indices to &#39;max_num_segments&#39; per shard.
+</span><span class="sd">          Skip indices that have already been forcemerged to the minimum number of
+</span><span class="sd">          segments to avoid reprocessing.
+</span><span class="sd">        options:
+</span><span class="sd">          disable_action: False
+</span><span class="sd">          max_num_segments: 2
+</span><span class="sd">          timeout_override:
+</span><span class="sd">          delay: 5
+</span><span class="sd">          continue_if_exception: False
+</span><span class="sd">        filters:
+</span><span class="sd">          - filtertype: pattern
+</span><span class="sd">            kind: regex
+</span><span class="sd">            value: &#39;^abc-202(0|1).*shrink$&#39;
+</span><span class="sd">          - filtertype: forcemerged
+</span><span class="sd">            max_num_segments: 2
+</span><span class="sd">            exclude:</span><span class="w">    
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">ConfigMap</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator-config-shrink</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">guardian</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator</span><span class="w">
+</span><span class="w"></span><span class="nt">data</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">curator_conf.yml</span><span class="p">:</span><span class="w"> </span><span class="p">|-</span><span class="sd">
+</span><span class="sd">    # Remember, leave a key empty if there is no value.  None will be a string,
+</span><span class="sd">    # not a Python &#34;NoneType&#34;
+</span><span class="sd">    client:
+</span><span class="sd">      hosts:
+</span><span class="sd">        - elasticsearch-databeat.guardian
+</span><span class="sd">      port: 9200
+</span><span class="sd">      url_prefix:
+</span><span class="sd">      use_ssl: False
+</span><span class="sd">      certificate:
+</span><span class="sd">      client_cert:
+</span><span class="sd">      client_key:
+</span><span class="sd">      ssl_no_validate: False
+</span><span class="sd">      http_auth: user:password
+</span><span class="sd">      timeout: 3600
+</span><span class="sd">      master_only: False
+</span><span class="sd">
+</span><span class="sd">    logging:
+</span><span class="sd">      loglevel: INFO
+</span><span class="sd">      logfile:
+</span><span class="sd">      logformat: default
+</span><span class="sd">      blacklist: [&#39;elasticsearch&#39;, &#39;urllib3&#39;]</span><span class="w">    
+</span><span class="w"></span><span class="nn">---</span><span class="w">
+</span><span class="w"></span><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">batch/v1</span><span class="w">
+</span><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Job</span><span class="w">
+</span><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator-shrink-es-indices</span><span class="w">
+</span><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">guardian</span><span class="w">
+</span><span class="w">  </span><span class="nt">labels</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator</span><span class="w">
+</span><span class="w">    </span><span class="nt">tier</span><span class="p">:</span><span class="w"> </span><span class="l">migration-job</span><span class="w">
+</span><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">  </span><span class="nt">template</span><span class="p">:</span><span class="w">
+</span><span class="w">    </span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span><span class="nt">containers</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator</span><span class="w">
+</span><span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">praseodym/elasticsearch-curator:latest</span><span class="w">
+</span><span class="w">        </span><span class="nt">args</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- --<span class="l">config</span><span class="w">
+</span><span class="w">        </span>- <span class="l">/etc/curator/curator_conf.yml</span><span class="w">
+</span><span class="w">        </span>- <span class="l">/etc/curator/shrink_forcemerge.yml</span><span class="w">
+</span><span class="w">        </span><span class="nt">env</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_HOST_LOCAL</span><span class="w">
+</span><span class="w">          </span><span class="nt">valueFrom</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">secretKeyRef</span><span class="p">:</span><span class="w">
+</span><span class="w">              </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">elk-secrets</span><span class="w">
+</span><span class="w">              </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_HOST_LOCAL</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_PORT</span><span class="w">
+</span><span class="w">          </span><span class="nt">valueFrom</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">secretKeyRef</span><span class="p">:</span><span class="w">
+</span><span class="w">              </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">elk-secrets</span><span class="w">
+</span><span class="w">              </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_PORT</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_DATABEAT_AUTH</span><span class="w">
+</span><span class="w">          </span><span class="nt">valueFrom</span><span class="p">:</span><span class="w">
+</span><span class="w">            </span><span class="nt">secretKeyRef</span><span class="p">:</span><span class="w">
+</span><span class="w">              </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">elk-secrets</span><span class="w">
+</span><span class="w">              </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l">ELASTICSEARCH_DATABEAT_AUTH</span><span class="w">
+</span><span class="w">        </span><span class="nt">volumeMounts</span><span class="p">:</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config</span><span class="w">
+</span><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/etc/curator/curator_conf.yml</span><span class="w">
+</span><span class="w">          </span><span class="nt">readOnly</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">          </span><span class="nt">subPath</span><span class="p">:</span><span class="w"> </span><span class="l">curator_conf.yml</span><span class="w">
+</span><span class="w">        </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">action-config</span><span class="w">
+</span><span class="w">          </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l">/etc/curator/shrink_forcemerge.yml</span><span class="w">
+</span><span class="w">          </span><span class="nt">readOnly</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="w">          </span><span class="nt">subPath</span><span class="p">:</span><span class="w"> </span><span class="l">shrink_forcemerge.yml</span><span class="w">
+</span><span class="w">      </span><span class="nt">restartPolicy</span><span class="p">:</span><span class="w"> </span><span class="l">Never</span><span class="w">
+</span><span class="w">      </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">config</span><span class="w">
+</span><span class="w">        </span><span class="nt">configMap</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">defaultMode</span><span class="p">:</span><span class="w"> </span><span class="m">0600</span><span class="w">
+</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator-config-shrink</span><span class="w">
+</span><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">action-config</span><span class="w">
+</span><span class="w">        </span><span class="nt">configMap</span><span class="p">:</span><span class="w">
+</span><span class="w">          </span><span class="nt">defaultMode</span><span class="p">:</span><span class="w"> </span><span class="m">0600</span><span class="w">
+</span><span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">curator-action-config-shrink</span><span class="w">
+</span></code></pre></div><p>操作效果是会把下面这些主分片为 5 副本数为 1 的索引都 shrink 成主分片为 1 副本数为 1 的小索引，索引名以 shrink 结尾：</p>
+<div class="highlight"><pre class="chroma"><code class="language-fallback" data-lang="fallback">abc-2020 -&gt; abc-2020.shrink
+abc-2021 -&gt; abc-2021.shrink
+</code></pre></div><h3 id="三集群升配">三、集群升配</h3>
+<p>尽全力做完前两步之后，再看分片数：</p>
+<div class="highlight"><pre class="chroma"><code class="language-json" data-lang="json"><span class="err">GET</span> <span class="err">_cat/health?v</span>
+
+<span class="err">epoch</span>      <span class="err">timestamp</span> <span class="err">cluster</span>                 <span class="err">status</span> <span class="err">node.total</span> <span class="err">node.data</span> <span class="err">shards</span>  <span class="err">pri</span> <span class="err">relo</span> <span class="err">init</span> <span class="err">unassign</span> <span class="err">pending_tasks</span> <span class="err">max_task_wait_time</span> <span class="err">active_shards_percent</span>
+<span class="mi">1635180165</span> <span class="mi">00</span><span class="err">:</span><span class="mi">42</span><span class="err">:</span><span class="mi">45</span>  <span class="err">es-cn-v</span><span class="mi">0</span><span class="err">h</span><span class="mi">1</span><span class="err">fbary</span><span class="mi">000</span><span class="err">yaywp</span> <span class="err">green</span>           <span class="mi">6</span>         <span class="mi">6</span>  <span class="mi">14396</span> <span class="mi">7295</span>    <span class="mi">0</span>    <span class="mi">0</span>        <span class="mi">0</span>             <span class="mi">0</span>                  <span class="err">-</span>                <span class="mf">100.0</span><span class="err">%</span>
+</code></pre></div><p>已经从 16276 降到了 14396，节省了 1880 个分片，但是离阿里云建议的每个节点 400 个分片还是有很大差距。</p>
+<p>到这一步其实已经是迫不得已了，毕竟阿里云的 es 集群升配每个月贵几千还是有一定成本的，不过在前面做了那么多优化处理的情况下，整个集群分配仍然还处于一个超高状态，那就不得不升配了，升配也有下面两个方向，具体看大家情况决定了：</p>
+<ol>
+<li>加节点</li>
+<li>提升单节点的 CPU 等指标</li>
+</ol>
+<p>当然，最终选择升配也不代表前面所做的没有意义，毕竟配置索引模版、reindex、shrink 这些操作如果能提升到日常运维项中来，可以很大程度避免以后再出类似的状况。</p>
+<h2 id="效果">效果</h2>
+<p>效果嘛当然就是 kibana 终于可以正常创建 index pattern 了：
+<img src="https://hj24-blog.oss-cn-shanghai.aliyuncs.com/blog/kibana-success.png" alt=""></p>
+<h2 id="参考">参考</h2>
+<ol>
+<li><a href="https://juejin.cn/post/7009593798011387917">掘金-一篇搞懂ElasticSearch（附学习脑图）</a></li>
+<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.15/index.html">es 官方文档</a></li>
+</ol></div>
+                    <div class="post_footer">
+                        
+                        <div class="meta">
+                            <div class="info">
+                                <span class="field tags">
+                                    <i class="ri-stack-line"></i>
+                                    
+                                    <a href="https://hj24.life/tags/devops/">Devops</a>
+                                    
+                                </span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                
+                
+<div class="doc_comments">
+	<div id="gitalk-container"></div>
+</div>
+<link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<script type="text/javascript">
+let gitalk = new Gitalk({
+  clientID: '946e62e1049edfb63fd7',
+  clientSecret: 'ea3d0fcb9025fb88bd8dd50742bcf43dacd6af34',
+  repo: 'hj24.github.io',
+  owner: 'hj24',
+  admin: ['hj24'],
+  id: '2021-10-21 17:35:59 \u002b0800 CST',      
+  distractionFreeMode: false,  
+  title : 'Kibana创建不了index Pattern怎么办',
+  labels : []
+});
+gitalk.render('gitalk-container')
+</script>
+                
+            </div>
+        </div>
+    </div>
+    <a id="back_to_top" href="#" class="back_to_top"><i class="ri-arrow-up-s-line"></i></a>
+    <footer class="footer">
+    <div class="powered_by">
+        <a href="https://varkai.com">Designed by VarKai,</a>
+        <a href="http://www.gohugo.io/">Proudly published with Hugo</a>
+    </div>
+
+    <div class="footer_slogan">
+        <span>hj24&#39;s life log</span>
+    </div>
+</footer>
+    <script src="https://hj24.life/js/jquery-3.5.1.min.js"></script>
+<link href="https://hj24.life/css/fancybox.min.css" rel="stylesheet">
+<script src="https://hj24.life/js/fancybox.min.js"></script>
+<script src="https://hj24.life/js/zozo.js"></script>
+
+
+<script type="text/javascript" async
+    src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                TeX: {
+                    equationNumbers: { autoNumber: "AMS" },
+                    extensions: ["AMSmath.js", "AMSsymbols.js"]
+                }
+            }
+        });
+
+        MathJax.Hub.Queue(function () {
+            
+            
+            
+            var all = MathJax.Hub.getAllJax(), i;
+            for (i = 0; i < all.length; i += 1) {
+                all[i].SourceElement().parentNode.className += ' has-jax';
+            }
+        });
+    </script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+
+
+
+</body>
+
+</html>

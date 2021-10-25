@@ -6,7 +6,16 @@
     <description>Recent content in Devops on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Fri, 12 Feb 2021 14:41:20 +0800</lastBuildDate><atom:link href="https://hj24.life/tags/devops/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 21 Oct 2021 17:35:59 +0800</lastBuildDate><atom:link href="https://hj24.life/tags/devops/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Kibana创建不了index Pattern怎么办</title>
+      <link>https://hj24.life/posts/kibana%E5%88%9B%E5%BB%BA%E4%B8%8D%E4%BA%86index-pattern%E6%80%8E%E4%B9%88%E5%8A%9E/</link>
+      <pubDate>Thu, 21 Oct 2021 17:35:59 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/kibana%E5%88%9B%E5%BB%BA%E4%B8%8D%E4%BA%86index-pattern%E6%80%8E%E4%B9%88%E5%8A%9E/</guid>
+      <description>&lt;p&gt;这个问题的根源是某个 es 集群的分片数过多，集群负载太高，连带着导致 kibana 这边建立不了 index pattern。虽然最终解决还是选择了给集群升配，但这中间给索引做 redindex、shrink 等操作还是积攒了不少经验。&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>记一次扇贝账号服务的压测</title>
       <link>https://hj24.life/posts/%E8%AE%B0%E4%B8%80%E6%AC%A1%E6%89%87%E8%B4%9D%E8%B4%A6%E5%8F%B7%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%8E%8B%E6%B5%8B/</link>

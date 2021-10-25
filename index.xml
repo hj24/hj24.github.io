@@ -6,7 +6,16 @@
     <description>Recent content on 客舟听雨</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 25 Jul 2021 19:24:01 +0800</lastBuildDate><atom:link href="https://hj24.life/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 21 Oct 2021 17:35:59 +0800</lastBuildDate><atom:link href="https://hj24.life/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Kibana创建不了index Pattern怎么办</title>
+      <link>https://hj24.life/posts/kibana%E5%88%9B%E5%BB%BA%E4%B8%8D%E4%BA%86index-pattern%E6%80%8E%E4%B9%88%E5%8A%9E/</link>
+      <pubDate>Thu, 21 Oct 2021 17:35:59 +0800</pubDate>
+      
+      <guid>https://hj24.life/posts/kibana%E5%88%9B%E5%BB%BA%E4%B8%8D%E4%BA%86index-pattern%E6%80%8E%E4%B9%88%E5%8A%9E/</guid>
+      <description>&lt;p&gt;这个问题的根源是某个 es 集群的分片数过多，集群负载太高，连带着导致 kibana 这边建立不了 index pattern。虽然最终解决还是选择了给集群升配，但这中间给索引做 redindex、shrink 等操作还是积攒了不少经验。&lt;/p&gt;</description>
+    </item>
+    
     <item>
       <title>聊聊OSS和CDN架构</title>
       <link>https://hj24.life/posts/%E8%81%8A%E8%81%8Aoss%E5%92%8Ccdn%E6%9E%B6%E6%9E%84/</link>
@@ -87,12 +96,12 @@
     </item>
     
     <item>
-      <title>百宝袋</title>
+      <title>任意门</title>
       <link>https://hj24.life/fav/</link>
       <pubDate>Sat, 14 Nov 2020 17:45:48 +0800</pubDate>
       
       <guid>https://hj24.life/fav/</guid>
-      <description>工具 redis 内存估算模型 json 转 go struct 工具 博客 kindjeff | 扇贝同事 周而良 | 扇贝 | 云账房 | 创业 大学学长 | 东蒙读研 | 在做边缘计算 小米有品Java工程师 | 高中学长 Django群友 | 腾讯实习 | 造轮子狂魔 张佳园 | PyConChin</description>
+      <description>工具 Redis 内存估算模型 json 转 go struct 工具 博客 kindjeff | 扇贝同事 周而良 | 扇贝 | 云账房 | 创业 大学学长 | 东蒙读研 | 字节实习 高中学长 | 小米有品 | 字节 Django群友 | 腾讯实习 | 造轮子狂魔 张佳园 | PyConChina讲师</description>
     </item>
     
     <item>
