@@ -105,6 +105,39 @@
 
 <div class="post animated fadeInDown">
     <div class="post_title">
+        <h2><a href='/posts/%E4%B8%80%E6%AC%A1p0%E4%BA%8B%E6%95%85%E5%BC%95%E8%B5%B7%E7%9A%84%E4%B8%9A%E5%8A%A1%E6%80%9D%E8%80%83/'>一次P0事故引起的业务思考</a></h2>
+    </div>
+    
+    <div class="list">
+        <div class="post_content markdown">
+            <p><p>背景是前几天的一次 P0 事故，我们当做数据库用的 redis 满了，触发了配置的 LRU 逐出策略，逐出了 20min 的 key，导致大概有 2w 用户当天的学习数据丢失，在处理过程中有很多值得总结的点，于是写下这篇博客。</p></p>
+        </div>
+    </div>
+    
+    <div class="post_footer">
+        <div class="meta">
+            <div class="info">
+                <span class="field">
+                    <i class="ri-map-pin-time-line"></i>
+                    <span class="date">2020.11.15</span>
+                </span>
+                
+                <span class="field tags">
+                    <i class="ri-stack-line"></i>
+                    
+                    <a href="https://hj24.life/tags/%E4%B8%9A%E5%8A%A1%E6%80%9D%E8%80%83/">业务思考</a>
+                    
+                    <a href="https://hj24.life/tags/%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/">踩坑记录</a>
+                    
+                </span>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="post animated fadeInDown">
+    <div class="post_title">
         <h2><a href='/posts/hugo%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8C%97/'>Hugo使用指北</a></h2>
     </div>
     
@@ -275,53 +308,6 @@ pip install =&gt; docker build</p>
                     <i class="ri-stack-line"></i>
                     
                     <a href="https://hj24.life/tags/devops/">Devops</a>
-                    
-                </span>
-                
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="post animated fadeInDown">
-    <div class="post_title">
-        <h2><a href='/posts/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E5%92%8C%E5%8D%8F%E7%A8%8B%E6%B5%85%E6%9E%90/'>进程线程和协程浅析</a></h2>
-    </div>
-    
-    <div class="list">
-        <div class="post_content markdown">
-            <p><meta name="referrer" content="no-referrer" />
-不管考研还是工作，进程线程总是一个避免不了的问题，除此之外，协程也是高并发编程必备的技能
-<p>这篇博客照旧还是以问题为导向，如果看完能回答出下面这些问题，那么应该就初步掌握了这些点，剩下的部分就需要你不断code，不断深挖技术书籍，在实践中提升自己的理解:</p>
-<ol>
-<li>进程、线程、协程有什么区别？</li>
-<li>线程共享哪些进程资源，有哪些独立资源？</li>
-<li>都说进程线程切换开销大，到底大在哪？</li>
-<li>线程池是什么？它有什么作用？</li>
-<li>你知道有哪些多进程和多线程的使用场景？</li>
-<li>进程和进程之间，线程和线程之间怎么通信？</li>
-<li>Python和Golang的协程有什么区别？</li>
-</ol>
-<p>搞完概念之后可以来试试code，这里有两道leetcode的线程题:</p>
-<ol>
-<li><a href="https://leetcode-cn.com/problems/print-in-order/">按序打印</a></li>
-<li><a href="https://leetcode-cn.com/problems/print-foobar-alternately/">交替打印FooBar</a></li>
-</ol></p>
-        </div>
-    </div>
-    
-    <div class="post_footer">
-        <div class="meta">
-            <div class="info">
-                <span class="field">
-                    <i class="ri-map-pin-time-line"></i>
-                    <span class="date">2020.01.29</span>
-                </span>
-                
-                <span class="field tags">
-                    <i class="ri-stack-line"></i>
-                    
-                    <a href="https://hj24.life/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a>
                     
                 </span>
                 

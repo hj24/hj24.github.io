@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="hj24" />
+	
+	
+	
+	<title>八股文 Go篇 ｜ 客舟听雨</title>
+	
+    
+    
+    <meta name="description" content="结合一些实际面试遇到的问题和网上看的八股文，总结一下面试里常问到的 Go 相关的问题。
+" />
+    
+
+    
+    
+    <meta name="keywords" content="Hugo, theme, zozo" />
+    
+
+	
+    
+    <link rel="shortcut icon" href="https://hj24.life/images/favicon.ico" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.lifecss/normalize.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/zozo.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://hj24.life/css/highlight.css" />
+
+    
+    
+</head>
+
+<body>
+    <div class="main animate__animated animate__fadeInDown">
+        <div class="nav_container animated fadeInDown">
+    <div class="site_nav" id="site_nav">
+        <ul>
+            
+            <li>
+                <a href="/">首页</a>
+            </li>
+            
+            <li>
+                <a href="/posts/">归档</a>
+            </li>
+            
+            <li>
+                <a href="/tags/">标签</a>
+            </li>
+            
+            <li>
+                <a href="/fav/">好站</a>
+            </li>
+            
+            <li>
+                <a href="/snippets/">代码片</a>
+            </li>
+            
+            <li>
+                <a href="/about/">关于</a>
+            </li>
+            
+        </ul>
+    </div>
+    <div class="menu_icon">
+        <a id="menu_icon"><i class="ri-menu-line"></i></a>
+    </div>
+</div>
+        <div class="header animated fadeInDown">
+    <div class="site_title_container">
+        <div class="site_title">
+            <h1>
+                <a href="https://hj24.life">
+                    <span>客舟听雨</span>
+                </a>
+            </h1>
+        </div>
+        <div class="description">
+            <p class="sub_title">hj24.life</p>
+            <div class="my_socials">
+                
+                
+                <a href="https://github.com/hj24" title="github" target="_blank"><i class="ri-github-fill"></i></a>
+                
+                
+                
+                <a href="https://www.zhihu.com/people/da-li-ju-13" title="zhihu" target="_blank"><i class="ri-zhihu-fill"></i></a>
+                
+                
+                <a href="https://hj24.life/index.xml" type="application/rss+xml" title="rss" target="_blank"><i
+                        class="ri-rss-fill"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="content">
+            <div class="post_page">
+                <div class="post animate__animated animate__fadeInDown">
+                    <div class="post_title post_detail_title">
+                        <h2><a href='/posts/%E5%85%AB%E8%82%A1%E6%96%87-go%E7%AF%87/'>八股文 Go篇</a></h2>
+                        <span class="date">2021.09.23</span>
+                    </div>
+                    <div class="post_content markdown"><p>结合一些实际面试遇到的问题和网上看的八股文，总结一下面试里常问到的 Go 相关的问题。</p>
+<h2 id="并发编程相关">并发编程相关</h2>
+<p>1）<code>sync.pool</code> 用过吗，了解的话讲一下</p>
+<blockquote>
+<p>得物</p>
+</blockquote>
+<p>主要是为了保存和复用一些临时对象，避免频繁的内存分配，减少 GC。光看这句话可能不直观，看下这个例子就清楚了:</p>
+<div class="highlight"><pre class="chroma"><code class="language-golang" data-lang="golang"><span class="kd">var</span> <span class="nx">studentPool</span> <span class="p">=</span> <span class="nx">sync</span><span class="p">.</span><span class="nx">Pool</span><span class="p">{</span>
+    <span class="nx">New</span><span class="p">:</span> <span class="kd">func</span><span class="p">()</span> <span class="kd">interface</span><span class="p">{}</span> <span class="p">{</span> 
+        <span class="k">return</span> <span class="nb">new</span><span class="p">(</span><span class="nx">Student</span><span class="p">)</span> 
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">BenchmarkUnmarshal</span><span class="p">(</span><span class="nx">b</span> <span class="o">*</span><span class="nx">testing</span><span class="p">.</span><span class="nx">B</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">for</span> <span class="nx">n</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">n</span> <span class="p">&lt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">N</span><span class="p">;</span> <span class="nx">n</span><span class="o">++</span> <span class="p">{</span>
+		<span class="nx">stu</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="nx">Student</span><span class="p">{}</span>
+		<span class="nx">json</span><span class="p">.</span><span class="nf">Unmarshal</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">stu</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">BenchmarkUnmarshalWithPool</span><span class="p">(</span><span class="nx">b</span> <span class="o">*</span><span class="nx">testing</span><span class="p">.</span><span class="nx">B</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">for</span> <span class="nx">n</span> <span class="o">:=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">n</span> <span class="p">&lt;</span> <span class="nx">b</span><span class="p">.</span><span class="nx">N</span><span class="p">;</span> <span class="nx">n</span><span class="o">++</span> <span class="p">{</span>
+		<span class="nx">stu</span> <span class="o">:=</span> <span class="nx">studentPool</span><span class="p">.</span><span class="nf">Get</span><span class="p">().(</span><span class="o">*</span><span class="nx">Student</span><span class="p">)</span>
+		<span class="nx">json</span><span class="p">.</span><span class="nf">Unmarshal</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">stu</span><span class="p">)</span>
+		<span class="nx">studentPool</span><span class="p">.</span><span class="nf">Put</span><span class="p">(</span><span class="nx">stu</span><span class="p">)</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div><p>2）go 里面互斥锁和读写锁有什么区别</p>
+<blockquote>
+<p>得物、高频、必会</p>
+</blockquote>
+<p>普通互斥锁读写都会阻塞，读写锁在纯读操作的时候不会阻塞，写操作之间互斥，读写之间也会互斥</p>
+<p>3）使用互斥锁的时候会不会出现某个 goroutine 一直取不到锁的情况？互斥锁有哪些状态？如何保证公平？</p>
+<blockquote>
+<p>得物</p>
+</blockquote>
+<p>不会，互斥锁有正常状态和饥饿状态两种状态。</p>
+<p>正常状态下，所有等待锁的 goroutine 会按 FIFO 的顺序等待，等待队列中被唤醒的 goroutine 不会立刻持有锁，而是会和最新请求锁的 goroutine 竞争，不过因为新请求的 goroutine 正在占用 cpu，而且可能有很多，所以一般都竞争不过，这时候最新请求的 goroutine 会拿到锁，被唤醒的 goroutine 会回到队首继续等待。</p>
+<p>如果队首的等待超过 1ms，那么就会进入饥饿模式，饥饿模式下最新来的 goroutine 不会和等待队列里的竞争，总是优先把锁给等待队列里的第一个。</p>
+<p>当等待队列里的 goroutine 获取了锁并且它在队列末尾时，或者某个等待 goroutine 等待时间小于 1ms 时，那么互斥锁的状态会回到正常模式，如此往复。</p>
+<p>4）GPM 调度机制</p>
+<blockquote>
+<p>字节、b站、shopee、高频、必会</p>
+</blockquote>
+<ol>
+<li>把 goroutine（G）以 m:n 的形式通过 processor 队列（P）调度映射到操作系统线程（M）上</li>
+<li>M 会优先从绑定的 P 队列上去 G 执行，如果取不到会去全局队列取，如果还是取不到会去其它 M 的 P 队列上偷一半</li>
+<li>当发生系统调用（比如 gc）阻塞时，M 会解绑 P 交给其他 M，让 P 中剩余的 G 不至于空等</li>
+<li>当发生用户态（比如网络 IO）阻塞时，G 会进入等待队列，M 跳过它继续执行后面的 G</li>
+<li>当 G 被某个 G2 唤醒时，G 会首先尝试加入 G2 所在的 P 队列，如果满了的话则会加入全局队列</li>
+</ol>
+<p>5）<code>GOMAXPROCS</code> 环境变量的作用</p>
+<blockquote>
+<p>b 站</p>
+</blockquote>
+<ol>
+<li>这个环境变量为 Go 程序设置了逻辑 CPU 的数目，也就是 M 的数目</li>
+<li>合理的设置这个值，比如计算素数这种 CPU 密集型应用里可以有效提升并发性能，如果不合理，会导致程序非常占用系统资源</li>
+<li>go 1.5 版本之前这个值默认是 1，1.5 版本之后默认是机器 CPU 核数</li>
+</ol>
+<h2 id="数据结构相关">数据结构相关</h2>
+<p>1）<code>sync.map</code> 的实现原理</p>
+<blockquote>
+<p>字节、高频、必会</p>
+</blockquote>
+<ol>
+<li>通过 read 和 dirty 两个字段来进行读写分离，最新写入数据始终写进 dirty，然后定期同步到 read 上</li>
+<li>读的时候先从 read 读，如果读不到则穿透到 dirty 上读</li>
+<li>读取 read 时不需要加锁，但是读写 dirty 时都要加锁</li>
+<li>通过 misses 字段来统计 read 被穿透的次数，超过一定量时将 dirty 数据同步到 read 上</li>
+<li>删除数据时通过标记来延迟删除</li>
+</ol></div>
+                    <div class="post_footer">
+                        
+                        <div class="meta">
+                            <div class="info">
+                                <span class="field tags">
+                                    <i class="ri-stack-line"></i>
+                                    
+                                    <a href="https://hj24.life/tags/%E9%9D%A2%E8%AF%95/">面试</a>
+                                    
+                                </span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                
+                
+<div class="doc_comments">
+	<div id="gitalk-container"></div>
+</div>
+<link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<script type="text/javascript">
+let gitalk = new Gitalk({
+  clientID: '946e62e1049edfb63fd7',
+  clientSecret: 'ea3d0fcb9025fb88bd8dd50742bcf43dacd6af34',
+  repo: 'hj24.github.io',
+  owner: 'hj24',
+  admin: ['hj24'],
+  id: '2021-09-23 22:50:24 \u002b0800 CST',      
+  distractionFreeMode: false,  
+  title : '八股文 Go篇',
+  labels : []
+});
+gitalk.render('gitalk-container')
+</script>
+                
+            </div>
+        </div>
+    </div>
+    <a id="back_to_top" href="#" class="back_to_top"><i class="ri-arrow-up-s-line"></i></a>
+    <footer class="footer">
+    <div class="powered_by">
+        <a href="https://varkai.com">Designed by VarKai,</a>
+        <a href="http://www.gohugo.io/">Proudly published with Hugo</a>
+    </div>
+
+    <div class="footer_slogan">
+        <span>hj24&#39;s life log</span>
+    </div>
+</footer>
+    <script src="https://hj24.life/js/jquery-3.5.1.min.js"></script>
+<link href="https://hj24.life/css/fancybox.min.css" rel="stylesheet">
+<script src="https://hj24.life/js/fancybox.min.js"></script>
+<script src="https://hj24.life/js/zozo.js"></script>
+
+
+<script type="text/javascript" async
+    src="https://cdn.bootcss.com/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+                processEscapes: true,
+                processEnvironments: true,
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                TeX: {
+                    equationNumbers: { autoNumber: "AMS" },
+                    extensions: ["AMSmath.js", "AMSsymbols.js"]
+                }
+            }
+        });
+
+        MathJax.Hub.Queue(function () {
+            
+            
+            
+            var all = MathJax.Hub.getAllJax(), i;
+            for (i = 0; i < all.length; i += 1) {
+                all[i].SourceElement().parentNode.className += ' has-jax';
+            }
+        });
+    </script>
+
+<style>
+    code.has-jax {
+        font: inherit;
+        font-size: 100%;
+        background: inherit;
+        border: inherit;
+        color: #515151;
+    }
+</style>
+
+
+
+</body>
+
+</html>
